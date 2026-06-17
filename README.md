@@ -17,6 +17,19 @@ uvicorn api.main:app --reload
 
 The API health check is available at `http://localhost:8000/health`.
 
+## Phase 2 Data Pipeline
+
+Place raw files at `data/raw/candidates.csv` and `data/raw/jobs.csv` (JSON and
+JSONL are also supported), then run:
+
+```powershell
+python scripts/process_phase2.py --raw-dir data/raw --processed-dir data/processed
+```
+
+The pipeline writes `candidates.parquet`, `jobs.parquet`, and
+`rejected.parquet`. Every row either validates against the canonical schema or is
+quarantined with a documented reason.
+
 ## Docker
 
 ```powershell
@@ -26,4 +39,3 @@ docker compose -f deployment/docker-compose.yml up --build
 
 Docker Compose starts the API, Qdrant, and Ollama. Claude support is optional
 and is enabled by setting `LLM_PROVIDER=claude` plus `ANTHROPIC_API_KEY`.
-
