@@ -1,3 +1,5 @@
+import json
+from collections.abc import Iterable
 from typing import Any
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
@@ -18,11 +20,28 @@ class CandidateRecord(BaseModel):
     def split_skills(cls, value: Any) -> list[str]:
         if value is None:
             return []
-        if isinstance(value, list):
+        if isinstance(value, Iterable) and not isinstance(value, str | bytes | dict):
             return [str(item).strip() for item in value if str(item).strip()]
         if isinstance(value, str):
             return [item.strip() for item in value.replace("|", ",").split(",") if item.strip()]
         return [str(value).strip()]
+
+    @field_validator("activity_metadata", mode="before")
+    @classmethod
+    def parse_activity_metadata(cls, value: Any) -> dict[str, Any]:
+        if value is None:
+            return {}
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            if not value.strip():
+                return {}
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {"raw": value}
+            return parsed if isinstance(parsed, dict) else {"raw": parsed}
+        return {"raw": value}
 
 
 class JobRecord(BaseModel):
@@ -39,7 +58,7 @@ class JobRecord(BaseModel):
     def split_skills(cls, value: Any) -> list[str]:
         if value is None:
             return []
-        if isinstance(value, list):
+        if isinstance(value, Iterable) and not isinstance(value, str | bytes | dict):
             return [str(item).strip() for item in value if str(item).strip()]
         if isinstance(value, str):
             return [item.strip() for item in value.replace("|", ",").split(",") if item.strip()]

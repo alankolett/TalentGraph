@@ -30,6 +30,18 @@ The pipeline writes `candidates.parquet`, `jobs.parquet`, and
 `rejected.parquet`. Every row either validates against the canonical schema or is
 quarantined with a documented reason.
 
+## Phase 3 Parsing Pipeline
+
+After Phase 2 has produced cleaned parquet files, run:
+
+```powershell
+python scripts/process_phase3.py --processed-dir data/processed
+```
+
+The parser writes `parsed_resumes.jsonl` and `parsed_jobs.jsonl`. Resume parsing
+is rule-based by default; job parsing can use the Phase 1 `LLMProvider` but falls
+back to deterministic heuristics so local tests do not require a running model.
+
 ## Docker
 
 ```powershell
