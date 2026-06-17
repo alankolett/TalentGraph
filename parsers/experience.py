@@ -3,9 +3,8 @@ from __future__ import annotations
 import re
 from datetime import date
 
-from preprocessing.cleaning import clean_text
-
 from parsers.models import ExperienceEntry
+from preprocessing.cleaning import clean_text
 
 try:
     import dateparser
@@ -100,7 +99,9 @@ class ExperienceExtractor:
 
     def _duration_months(self, start: str | None, end: str | None) -> int | None:
         start_date = self._parse_date(start)
-        end_date = date.today() if end and end.lower() in {"present", "current"} else self._parse_date(end)
+        end_date = (
+            date.today() if end and end.lower() in {"present", "current"} else self._parse_date(end)
+        )
         if not start_date or not end_date or end_date < start_date:
             return None
         return (end_date.year - start_date.year) * 12 + end_date.month - start_date.month

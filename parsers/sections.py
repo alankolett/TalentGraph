@@ -4,7 +4,6 @@ import re
 
 from preprocessing.cleaning import clean_text
 
-
 HEADING_ALIASES = {
     "summary": {"summary", "profile", "objective", "about"},
     "skills": {"skills", "technical skills", "technologies", "tooling"},

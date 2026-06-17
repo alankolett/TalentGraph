@@ -7,10 +7,8 @@ from typing import Any
 from pydantic import ValidationError
 
 from common.llm import LLMProvider
-from preprocessing.cleaning import clean_text, split_skills
-
 from parsers.models import ParsedJob
-
+from preprocessing.cleaning import clean_text, split_skills
 
 JSON_OBJECT_RE = re.compile(r"\{.*\}", re.DOTALL)
 SENIORITY_RE = re.compile(r"\b(intern|junior|mid|senior|staff|principal|lead)\b", re.I)
@@ -88,7 +86,9 @@ class JDStructuredExtractor:
 
     def _extract_responsibilities(self, text: str) -> list[str]:
         sentences = re.split(r"(?<=[.!?])\s+|;|\n", text)
-        selected = [clean_text(sentence) for sentence in sentences if RESPONSIBILITY_RE.search(sentence)]
+        selected = [
+            clean_text(sentence) for sentence in sentences if RESPONSIBILITY_RE.search(sentence)
+        ]
         return selected[:8] or [text[:160]]
 
     def _infer_skills(self, text: str, marker: str) -> list[str]:
@@ -118,4 +118,3 @@ class JDStructuredExtractor:
         if not isinstance(payload, dict):
             raise ValueError("LLM response JSON was not an object.")
         return payload
-

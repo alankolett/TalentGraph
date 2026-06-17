@@ -23,6 +23,7 @@ Place raw files at `data/raw/candidates.csv` and `data/raw/jobs.csv` (JSON and
 JSONL are also supported), then run:
 
 ```powershell
+python scripts/seed_sample_data.py --raw-dir data/raw
 python scripts/process_phase2.py --raw-dir data/raw --processed-dir data/processed
 ```
 
@@ -41,6 +42,31 @@ python scripts/process_phase3.py --processed-dir data/processed
 The parser writes `parsed_resumes.jsonl` and `parsed_jobs.jsonl`. Resume parsing
 is rule-based by default; job parsing can use the Phase 1 `LLMProvider` but falls
 back to deterministic heuristics so local tests do not require a running model.
+
+## Phase 4 Knowledge Graph
+
+After Phase 3 has produced parsed JSONL files, run:
+
+```powershell
+python scripts/process_phase4.py --processed-dir data/processed --graph-dir data/knowledge_graph
+```
+
+The graph builder writes `skill_ontology.json` and `candidate_kg.gpickle`.
+It normalizes skill synonyms/typos, adds candidate skill and career-history
+edges, adds job skill-requirement edges, and supports skill-distance lookups.
+
+## Phase 5 Embedding Pipeline
+
+After Phase 3 has produced parsed JSONL files, run:
+
+```powershell
+python scripts/process_phase5.py --processed-dir data/processed --embeddings-dir data/embeddings
+```
+
+By default this uses a deterministic local hashing backend for fast offline
+verification. Use `--backend sentence-transformers` for real model embeddings.
+The pipeline writes candidate/job embedding parquet files and upserts candidate
+vectors into a Qdrant-shaped index interface.
 
 ## Docker
 

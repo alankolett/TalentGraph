@@ -8,6 +8,8 @@ dependencies = [
     "anthropic>=0.40.0",
     "dateparser>=1.2.0",
     "fastapi>=0.115.0",
+    "networkx>=3.4.0",
+    "numpy>=2.3.0",
     "ollama>=0.4.0",
     "pandas>=2.2.0",
     "pyarrow>=18.0.0",
@@ -43,5 +45,5 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.setuptools.packages.find]
-include = ["api*", "common*", "parsers*", "preprocessing*"]
+include = ["api*", "common*", "embeddings*", "knowledge_graph*", "parsers*", "preprocessing*"]
 exclude = ["tests*", "tmp*"]

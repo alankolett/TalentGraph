@@ -75,3 +75,43 @@ retrieval, and ranking phases.
 | `nice_to_have` | list[string] | no | Preferred skills from Phase 2, LLM extraction, or heuristics. |
 | `responsibilities` | list[string] | no | Action-oriented responsibilities extracted from the job description. |
 | `raw_text` | string | yes | Cleaned source job description. |
+
+## Skill Ontology And Knowledge Graph
+
+| Artifact | Type | Notes |
+| --- | --- | --- |
+| `data/knowledge_graph/skill_ontology.json` | JSON | Canonical skills, aliases, and implication edges. |
+| `data/knowledge_graph/candidate_kg.gpickle` | pickle | NetworkX directed graph persisted for API/ranking reuse. |
+
+Graph node kinds:
+
+- `candidate`: candidate identifier nodes.
+- `skill`: normalized skill nodes.
+- `role`: candidate role-history nodes.
+- `company`: company nodes.
+- `job`: job identifier nodes.
+
+Graph edge kinds:
+
+- `HAS_SKILL`: candidate to skill.
+- `WORKED_AS`: candidate to role.
+- `AT_COMPANY`: role to company.
+- `TRANSITIONED_TO`: role-to-role career sequence.
+- `SKILL_IMPLIES`: skill to implied/related skill.
+- `REQUIRES_SKILL`: job to required skill.
+- `PREFERS_SKILL`: job to preferred skill.
+
+## Embedding Outputs
+
+| Artifact | Type | Notes |
+| --- | --- | --- |
+| `data/embeddings/candidate_embeddings.parquet` | parquet | Candidate id, dense vector, and JSON payload. |
+| `data/embeddings/job_embeddings.parquet` | parquet | Job id, dense vector, and JSON payload. |
+
+Candidate vector payload fields:
+
+- `skills`: parsed candidate skills.
+- `seniority`: optional seniority label when available.
+- `location`: candidate location from Phase 2.
+- `experience_years`: candidate years of experience from Phase 2.
+- `kg_node_id`: matching knowledge graph candidate node id.

@@ -36,4 +36,3 @@ class ParsedJob(BaseModel):
         if isinstance(value, str):
             return [item.strip() for item in value.replace("|", ",").split(",") if item.strip()]
         return [str(value).strip()]
-

@@ -4,11 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from preprocessing.models import CandidateRecord, JobRecord
-
 from parsers.jobs import JDStructuredExtractor
 from parsers.models import ParsedJob, ParsedResume
 from parsers.resumes import ResumeParser
+from preprocessing.models import CandidateRecord, JobRecord
 
 
 @dataclass
@@ -70,4 +69,3 @@ class Phase3Pipeline:
         with path.open("w", encoding="utf-8") as handle:
             for row in rows:
                 handle.write(json.dumps(row.model_dump(mode="json"), sort_keys=True) + "\n")
-

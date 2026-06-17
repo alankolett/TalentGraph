@@ -13,8 +13,7 @@ def test_phase3_pipeline_writes_schema_valid_jsonl(tmp_path) -> None:
             {
                 "id": "c1",
                 "raw_resume_text": (
-                    "Skills\nPython, SQL\nExperience\n"
-                    "Engineer at Acme, 2020 - 2021\nBuilt APIs."
+                    "Skills\nPython, SQL\nExperience\n" "Engineer at Acme, 2020 - 2021\nBuilt APIs."
                 ),
                 "skills_raw": ["Python", "SQL"],
                 "experience_years": 2.0,

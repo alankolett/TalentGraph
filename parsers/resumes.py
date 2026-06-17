@@ -1,9 +1,8 @@
-from preprocessing.cleaning import split_skills
-from preprocessing.models import CandidateRecord
-
 from parsers.experience import ExperienceExtractor
 from parsers.models import ParsedResume
 from parsers.sections import ResumeSectionSplitter
+from preprocessing.cleaning import split_skills
+from preprocessing.models import CandidateRecord
 
 
 class ResumeParser:
@@ -25,4 +24,3 @@ class ResumeParser:
             raw_skills=candidate.skills_raw or split_skills(sections.get("skills")),
             experience_entries=entries,
         )
-

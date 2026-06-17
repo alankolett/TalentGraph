@@ -1,13 +1,12 @@
 import json
 
 from common.llm import LLMProvider
-from preprocessing.models import CandidateRecord
-
 from parsers.experience import ExperienceExtractor
 from parsers.jobs import JDStructuredExtractor
 from parsers.models import ParsedJob
 from parsers.resumes import ResumeParser
 from parsers.sections import ResumeSectionSplitter
+from preprocessing.models import CandidateRecord
 
 
 class MalformedThenValidLLM:
@@ -89,4 +88,3 @@ def test_jd_extractor_repairs_malformed_llm_json() -> None:
     assert isinstance(parsed, ParsedJob)
     assert parsed.seniority == "senior"
     assert parsed.must_have == ["Python", "FastAPI"]
-
