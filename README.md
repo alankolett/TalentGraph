@@ -68,6 +68,26 @@ verification. Use `--backend sentence-transformers` for real model embeddings.
 The pipeline writes candidate/job embedding parquet files and upserts candidate
 vectors into a Qdrant-shaped index interface.
 
+## Phase 6 Hybrid Retrieval Pipeline
+
+After Phase 5 has produced candidate embedding files and indexed them, run:
+
+```powershell
+python scripts/process_phase6.py --processed-dir data/processed --embeddings-dir data/embeddings
+```
+
+This merges dense vector similarity search, BM25 keyword matching, and hard metadata masks (location, seniority, must-have skills) using Reciprocal Rank Fusion (RRF). It outputs the ranked shortlist of candidate matches for each job description.
+
+## Phase 7 Behavioral Signal Engineering
+
+After Phase 2 has cleaned and validated the datasets, run:
+
+```powershell
+python scripts/process_phase7.py --processed-dir data/processed
+```
+
+This extracts behavioral profiles for each candidate (activity recency time decay, contribution frequency, skills learning velocity, open source breadth) and normalizes the scores relative to the population. The output is written to `data/processed/behavioral_profiles.jsonl`.
+
 ## Docker
 
 ```powershell
