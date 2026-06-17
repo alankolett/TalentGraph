@@ -195,4 +195,12 @@ class DataCleaner:
             return value
         if value is None or is_missing(value) or clean_text(value) == "":
             return {}
+        if isinstance(value, str):
+            import json
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                pass
         return {"raw": clean_text(value)}

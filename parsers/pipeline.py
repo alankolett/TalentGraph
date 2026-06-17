@@ -63,6 +63,7 @@ class Phase3Pipeline:
             must_have_skills=job.must_have_skills,
             nice_to_have_skills=job.nice_to_have_skills,
             seniority=job.seniority,
+            location=job.location,
         )
 
     def _write_jsonl(self, path: Path, rows: list[ParsedResume] | list[ParsedJob]) -> None:

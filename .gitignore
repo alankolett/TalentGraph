@@ -12,3 +12,4 @@ data/embeddings/*
 data/knowledge_graph/*
 !data/**/.gitkeep
 tmp/
+docs/structures plan.pdf

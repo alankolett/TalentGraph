@@ -21,6 +21,7 @@ class ParsedJob(BaseModel):
     job_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     seniority: str | None = None
+    location: str | None = None
     must_have: list[str] = Field(default_factory=list)
     nice_to_have: list[str] = Field(default_factory=list)
     responsibilities: list[str] = Field(default_factory=list)

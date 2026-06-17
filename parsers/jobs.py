@@ -30,6 +30,7 @@ class JDStructuredExtractor:
         must_have_skills: list[str] | None = None,
         nice_to_have_skills: list[str] | None = None,
         seniority: str | None = None,
+        location: str | None = None,
     ) -> ParsedJob:
         base_payload = self._heuristic_payload(
             job_id=job_id,
@@ -38,6 +39,7 @@ class JDStructuredExtractor:
             must_have_skills=must_have_skills,
             nice_to_have_skills=nice_to_have_skills,
             seniority=seniority,
+            location=location,
         )
         if not self.llm_provider:
             return ParsedJob.model_validate(base_payload)
@@ -66,6 +68,7 @@ class JDStructuredExtractor:
         must_have_skills: list[str] | None,
         nice_to_have_skills: list[str] | None,
         seniority: str | None,
+        location: str | None,
     ) -> dict[str, Any]:
         text = clean_text(jd_text)
         inferred_seniority = seniority or self._infer_seniority(title, text)
@@ -74,6 +77,7 @@ class JDStructuredExtractor:
             "job_id": job_id,
             "title": clean_text(title),
             "seniority": inferred_seniority,
+            "location": clean_text(location) if location else None,
             "must_have": must_have_skills or self._infer_skills(text, "required"),
             "nice_to_have": nice_to_have_skills or self._infer_skills(text, "preferred"),
             "responsibilities": responsibilities,

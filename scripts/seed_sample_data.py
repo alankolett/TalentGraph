@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import json
 import pandas as pd
 
 
@@ -31,6 +32,18 @@ def main() -> None:
                 "years_experience": 6,
                 "location": "Remote",
                 "github": "https://github.com/example-c1",
+                "activity_metadata": json.dumps({
+                    "last_activity_date": "2026-06-10",
+                    "timeline": [
+                        {"date": "2026-05-01", "count": 10, "repo": "talentgraph"},
+                        {"date": "2026-06-10", "count": 15, "repo": "talentgraph"}
+                    ],
+                    "skills_over_time": [
+                        {"date": "2020-01-01", "skills": ["python"]},
+                        {"date": "2023-01-01", "skills": ["python", "fastapi"]},
+                        {"date": "2026-01-01", "skills": ["python", "fastapi", "qdrant"]}
+                    ]
+                })
             },
             {
                 "candidate_id": "c2",
@@ -44,6 +57,18 @@ def main() -> None:
                 "years_experience": 5,
                 "location": "Bengaluru",
                 "github": "https://github.com/example-c2",
+                "activity_metadata": json.dumps({
+                    "last_activity_date": "2025-12-01",
+                    "timeline": [
+                        {"date": "2025-10-01", "count": 2, "repo": "etl-utils"},
+                        {"date": "2025-12-01", "count": 3, "repo": "pandas-helper"}
+                    ],
+                    "skills_over_time": [
+                        {"date": "2019-01-01", "skills": ["python"]},
+                        {"date": "2021-01-01", "skills": ["python", "sql"]},
+                        {"date": "2022-01-01", "skills": ["python", "sql", "airflow"]}
+                    ]
+                })
             },
             {
                 "candidate_id": "c3",
@@ -57,6 +82,7 @@ def main() -> None:
                 "years_experience": 4,
                 "location": "Pune",
                 "github": "https://github.com/example-c3",
+                "activity_metadata": "{}"
             },
         ]
     )
