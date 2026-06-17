@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+*.egg-info/
+.env
+data/raw/*
+data/processed/*
+data/embeddings/*
+data/knowledge_graph/*
+!data/**/.gitkeep
+tmp/
