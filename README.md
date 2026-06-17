@@ -88,6 +88,16 @@ python scripts/process_phase7.py --processed-dir data/processed
 
 This extracts behavioral profiles for each candidate (activity recency time decay, contribution frequency, skills learning velocity, open source breadth) and normalizes the scores relative to the population. The output is written to `data/processed/behavioral_profiles.jsonl`.
 
+## Phase 8 Ranking Engine (Scoring)
+
+After Phase 6 and 7 pipelines have completed, run the final composite scoring and ranking:
+
+```powershell
+python scripts/process_phase8.py --processed-dir data/processed --graph-dir data/knowledge_graph --embeddings-dir data/embeddings
+```
+
+This calculates a 7-dimensional normalized feature vector (Jaccard skill overlap, graph skill distance, dense similarity, BM25 sigmoidal score, trajectory alignments, behavioral scores, seniority match) for all candidates passing retrieval masks, and computes final composite relevance scores using configurable, renormalized weights.
+
 ## Docker
 
 ```powershell
