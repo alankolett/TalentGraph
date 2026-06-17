@@ -9,7 +9,6 @@ from typing import Any
 import pandas as pd
 from rapidfuzz import fuzz
 
-
 TAG_RE = re.compile(r"<[^>]+>")
 WHITESPACE_RE = re.compile(r"\s+")
 
@@ -30,23 +29,35 @@ def normalize_optional_text(text: Any) -> str | None:
 
 
 def split_skills(value: Any) -> list[str]:
-    if value is None or pd.isna(value):
+    if value is None:
         return []
     if isinstance(value, list):
-        return [clean_text(item) for item in value if clean_text(item)]
-    return [clean_text(item) for item in str(value).replace("|", ",").split(",") if clean_text(item)]
+        return [cleaned for item in value if (cleaned := clean_text(item))]
+    if pd.isna(value):
+        return []
+    return [
+        cleaned for item in str(value).replace("|", ",").split(",") if (cleaned := clean_text(item))
+    ]
 
 
 def first_present(row: pd.Series, aliases: tuple[str, ...], default: Any = None) -> Any:
     for alias in aliases:
-        if alias in row and not pd.isna(row[alias]):
+        if alias in row and not is_missing(row[alias]):
             return row[alias]
     return default
 
 
+def is_missing(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, list | dict):
+        return False
+    return bool(pd.isna(value))
+
+
 @dataclass
 class DataCleaner:
-    duplicate_threshold: int = 96
+    duplicate_threshold: int = 99
     candidate_aliases: dict[str, tuple[str, ...]] = field(
         default_factory=lambda: {
             "id": ("id", "candidate_id", "uid"),
@@ -80,7 +91,9 @@ class DataCleaner:
                     "raw_resume_text": clean_text(
                         first_present(row, self.candidate_aliases["raw_resume_text"])
                     ),
-                    "skills_raw": split_skills(first_present(row, self.candidate_aliases["skills_raw"])),
+                    "skills_raw": split_skills(
+                        first_present(row, self.candidate_aliases["skills_raw"])
+                    ),
                     "experience_years": self._to_float(
                         first_present(row, self.candidate_aliases["experience_years"])
                     ),
@@ -119,7 +132,9 @@ class DataCleaner:
                     "seniority": normalize_optional_text(
                         first_present(row, self.job_aliases["seniority"])
                     ),
-                    "location": normalize_optional_text(first_present(row, self.job_aliases["location"])),
+                    "location": normalize_optional_text(
+                        first_present(row, self.job_aliases["location"])
+                    ),
                 }
             )
         return pd.DataFrame(rows)
@@ -145,12 +160,21 @@ class DataCleaner:
                 continue
 
             is_near_duplicate = any(
-                fuzz.token_set_ratio(str(payload.get(fuzzy_column, "")), str(item.get(fuzzy_column, "")))
+                fuzz.token_set_ratio(
+                    str(payload.get(fuzzy_column, "")),
+                    str(item.get(fuzzy_column, "")),
+                )
                 >= self.duplicate_threshold
                 for item in accepted
             )
             if is_near_duplicate:
-                rejected.append({"row_index": index, "reason": "near_duplicate_text", "payload": payload})
+                rejected.append(
+                    {
+                        "row_index": index,
+                        "reason": "near_duplicate_text",
+                        "payload": payload,
+                    }
+                )
                 continue
 
             seen_keys.add(key)
@@ -159,7 +183,7 @@ class DataCleaner:
         return pd.DataFrame(accepted), pd.DataFrame(rejected)
 
     def _to_float(self, value: Any) -> float | None:
-        if value is None or pd.isna(value) or clean_text(value) == "":
+        if value is None or is_missing(value) or clean_text(value) == "":
             return None
         try:
             return float(value)
@@ -169,7 +193,6 @@ class DataCleaner:
     def _metadata(self, value: Any) -> dict[str, Any]:
         if isinstance(value, dict):
             return value
-        if value is None or pd.isna(value) or clean_text(value) == "":
+        if value is None or is_missing(value) or clean_text(value) == "":
             return {}
         return {"raw": clean_text(value)}
-

@@ -53,4 +53,3 @@ class RejectedRecord(BaseModel):
     record_id: str | None = None
     reason: str
     payload: dict[str, Any]
-

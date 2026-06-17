@@ -6,7 +6,11 @@ from preprocessing.pipeline import Phase2Pipeline
 
 def main() -> None:
     parser = ArgumentParser(description="Run Phase 2 raw dataset cleaning and validation.")
-    parser.add_argument("--raw-dir", default="data/raw", help="Directory containing candidates/jobs files.")
+    parser.add_argument(
+        "--raw-dir",
+        default="data/raw",
+        help="Directory containing candidates/jobs files.",
+    )
     parser.add_argument("--processed-dir", default="data/processed", help="Output directory.")
     args = parser.parse_args()
 
@@ -18,4 +22,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

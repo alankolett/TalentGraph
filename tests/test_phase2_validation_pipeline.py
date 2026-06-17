@@ -44,44 +44,41 @@ def test_phase2_pipeline_writes_valid_parquet_outputs(tmp_path) -> None:
     processed_dir = tmp_path / "processed"
     raw_dir.mkdir()
 
-    pd.DataFrame(
+    candidates = [
+        {
+            "candidate_id": f"c{i}",
+            "resume": f"Candidate {i} built production systems with skill family {i}.",
+            "skills": f"Python, Skill{i}",
+            "years_experience": i,
+        }
+        for i in range(1, 11)
+    ]
+    candidates.extend(
         [
+            {"candidate_id": "c11", "resume": "", "skills": "SQL"},
             {
                 "candidate_id": "c1",
-                "resume": "Python engineer with ML systems and API experience.",
-                "skills": "Python, FastAPI",
-                "years_experience": 5,
-                "github": "https://github.com/example",
-            },
-            {
-                "candidate_id": "c2",
-                "resume": "",
-                "skills": "SQL",
-            },
-            {
-                "candidate_id": "c1",
-                "resume": "Python engineer with ML systems and API experience.",
-                "skills": "Python, FastAPI",
+                "resume": "Candidate 1 built production systems with skill family 1.",
+                "skills": "Python, Skill1",
             },
         ]
-    ).to_csv(raw_dir / "candidates.csv", index=False)
+    )
+    pd.DataFrame(candidates).to_csv(raw_dir / "candidates.csv", index=False)
 
-    pd.DataFrame(
-        [
-            {
-                "job_id": "j1",
-                "job_title": "Backend Engineer",
-                "description": "Build robust APIs and data workflows for ranking candidates.",
-                "required_skills": "Python, FastAPI",
-                "preferred_skills": "Qdrant",
-            },
-            {
-                "job_id": "j2",
-                "job_title": "Tiny JD",
-                "description": "Too short",
-            },
-        ]
-    ).to_csv(raw_dir / "jobs.csv", index=False)
+    jobs = [
+        {
+            "job_id": f"j{i}",
+            "job_title": f"Engineer {i}",
+            "description": (
+                f"Own service area {i}, build robust APIs, and improve ranking workflows."
+            ),
+            "required_skills": "Python, FastAPI",
+            "preferred_skills": "Qdrant",
+        }
+        for i in range(1, 8)
+    ]
+    jobs.append({"job_id": "j8", "job_title": "Tiny JD", "description": "Too short"})
+    pd.DataFrame(jobs).to_csv(raw_dir / "jobs.csv", index=False)
 
     result = Phase2Pipeline().run(raw_dir, processed_dir)
 
@@ -89,9 +86,10 @@ def test_phase2_pipeline_writes_valid_parquet_outputs(tmp_path) -> None:
     jobs = pd.read_parquet(result.jobs_path)
     rejected = pd.read_parquet(result.rejected_path)
 
-    assert result.candidate_count == 1
-    assert result.job_count == 1
+    assert len(candidates) + len(jobs) + len(rejected) == 20
+    assert result.candidate_count == 10
+    assert result.job_count == 7
     assert result.rejected_count == 3
-    assert list(candidates["id"]) == ["c1"]
-    assert list(jobs["id"]) == ["j1"]
+    assert list(candidates["id"])[:2] == ["c1", "c2"]
+    assert list(jobs["id"])[:2] == ["j1", "j2"]
     assert set(rejected["record_type"]) == {"candidate", "job"}

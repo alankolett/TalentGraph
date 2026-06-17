@@ -31,4 +31,3 @@ def test_candidate_cleaning_and_deduplication() -> None:
     assert len(rejected) == 1
     assert rejected.iloc[0]["reason"] == "duplicate_id"
     assert accepted.iloc[0]["skills_raw"] == ["Python", "ML"]
-

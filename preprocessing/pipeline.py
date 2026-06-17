@@ -1,5 +1,7 @@
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -68,9 +70,9 @@ class Phase2Pipeline:
         jobs_path = processed_dir / "jobs.parquet"
         rejected_path = processed_dir / "rejected.parquet"
 
-        valid_candidates.to_parquet(candidates_path, index=False)
+        self._parquet_ready(valid_candidates).to_parquet(candidates_path, index=False)
         valid_jobs.to_parquet(jobs_path, index=False)
-        rejected.to_parquet(rejected_path, index=False)
+        self._parquet_ready(rejected).to_parquet(rejected_path, index=False)
 
         return PipelineResult(
             candidates_path=candidates_path,
@@ -81,9 +83,7 @@ class Phase2Pipeline:
             rejected_count=len(rejected),
         )
 
-    def _dedupe_rejections(
-        self, df: pd.DataFrame, record_type: str, source: str
-    ) -> pd.DataFrame:
+    def _dedupe_rejections(self, df: pd.DataFrame, record_type: str, source: str) -> pd.DataFrame:
         rows = []
         for _, row in df.iterrows():
             payload = row.get("payload", {})
@@ -99,3 +99,14 @@ class Phase2Pipeline:
             )
         return pd.DataFrame(rows)
 
+    def _parquet_ready(self, df: pd.DataFrame) -> pd.DataFrame:
+        prepared = df.copy()
+        for column in prepared.columns:
+            if prepared[column].map(lambda value: isinstance(value, dict)).any():
+                prepared[column] = prepared[column].map(self._json_dump)
+        return prepared
+
+    def _json_dump(self, value: Any) -> str:
+        if isinstance(value, dict):
+            return json.dumps(value, sort_keys=True)
+        return str(value)

@@ -3,7 +3,6 @@ from typing import Literal
 
 import pandas as pd
 
-
 DatasetKind = Literal["candidates", "jobs"]
 
 
@@ -38,4 +37,3 @@ class DataLoader:
                 return candidate
         expected = ", ".join(path.name for path in candidates)
         raise FileNotFoundError(f"Expected one of {expected} in {raw_dir}")
-

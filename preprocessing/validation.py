@@ -5,7 +5,6 @@ from pydantic import BaseModel, ValidationError
 
 from preprocessing.models import CandidateRecord, JobRecord, RejectedRecord
 
-
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
@@ -42,7 +41,9 @@ class SchemaValidator:
 
         return pd.DataFrame(accepted), pd.DataFrame(rejected)
 
-    def validate_candidates(self, df: pd.DataFrame, source: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def validate_candidates(
+        self, df: pd.DataFrame, source: str
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         return self.validate_schema(df, CandidateRecord, "candidate", source)
 
     def validate_jobs(self, df: pd.DataFrame, source: str) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -54,4 +55,3 @@ class SchemaValidator:
             location = ".".join(str(part) for part in error["loc"])
             messages.append(f"{location}: {error['msg']}")
         return "; ".join(messages)
-
