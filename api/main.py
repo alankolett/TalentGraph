@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.database import DatabaseManager
 from api.orchestrator import RankingOrchestrator
@@ -40,6 +41,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TalentGraph API", lifespan=lifespan)
 
+# Add CORS Middleware to allow Next.js requests from localhost:3000
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -52,6 +62,18 @@ def health() -> dict[str, str]:
         "qdrant_url": settings.qdrant_url,
         "sqlite_path": str(settings.sqlite_path),
     }
+
+
+@app.get("/jobs")
+def get_jobs() -> dict[str, Any]:
+    jobs = app.state.db.get_all_jobs()
+    return {"status": "success", "jobs": jobs}
+
+
+@app.get("/candidates")
+def get_candidates() -> dict[str, Any]:
+    candidates = app.state.db.get_all_candidates()
+    return {"status": "success", "candidates": candidates}
 
 
 @app.post("/jobs", status_code=201)
