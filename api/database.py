@@ -70,6 +70,12 @@ class DatabaseManager:
             conn.commit()
 
     def save_job(self, job: dict[str, Any]) -> None:
+        job_id = job.get("job_id") or job.get("id")
+        raw_text = job.get("raw_text") or job.get("raw_description") or ""
+        must_have = job.get("must_have") or job.get("must_have_skills") or []
+        nice_to_have = job.get("nice_to_have") or job.get("nice_to_have_skills") or []
+        responsibilities = job.get("responsibilities") or []
+
         with self.get_connection() as conn:
             conn.execute(
                 """
@@ -77,14 +83,14 @@ class DatabaseManager:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    job["job_id"],
+                    job_id,
                     job["title"],
                     job.get("seniority"),
                     job.get("location"),
-                    json.dumps(job.get("must_have", [])),
-                    json.dumps(job.get("nice_to_have", [])),
-                    json.dumps(job.get("responsibilities", [])),
-                    job["raw_text"],
+                    json.dumps(must_have),
+                    json.dumps(nice_to_have),
+                    json.dumps(responsibilities),
+                    raw_text,
                 ),
             )
             conn.commit()

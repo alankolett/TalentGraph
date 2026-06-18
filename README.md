@@ -128,12 +128,42 @@ python scripts/process_phase11.py --processed-dir data/processed --graph-dir dat
 
 This harness benchmarks the full hybrid rerank system against a naive keyword-overlap baseline using standard Information Retrieval metrics (Precision@k, Mean Reciprocal Rank, and NDCG@k) evaluated against hand-labeled candidate relevance judgments (scores 0-3).
 
-## Docker
+## Phase 12 REST APIs
 
+The FastAPI backend exposes standard REST endpoints to manage and run the candidate-ranking pipeline:
+- `GET /health`: Diagnostic status of LLM connection, SQLite database, and environment configurations.
+- `POST /jobs`: Save or replace a job requirement profile.
+- `POST /candidates/bulk-upload`: Clean, validate, and bulk-load resumes (via CSV file upload or JSON body lists).
+- `POST /rank/{job_id}`: Trigger end-to-end scoring, reranking, and justification narratives for a job.
+- `GET /rank/{job_id}/results`: Retrieve saved ranking results from SQLite.
+- `GET /candidates/{id}`: Fetch candidate schema details.
+
+## Phase 13 Recruiter Dashboard
+
+A frontend Streamlit application provides a recruiters' UI to query the matching engine:
+- **Interactive Matching**: Pick any job profile, configure the reranker weight ($\alpha$) and size limit ($N$), and click Sourced and Rank. Displays interactive score breakdown radar charts and AI narrative justifications.
+- **Candidate Registry**: Upload new candidates or populate from baseline datasets, listing skills, YoE, and location.
+- **Live Evaluator**: Run full-pipeline metrics (Precision@k, MRR, and NDCG@k) against overlap baselines and visualize them in dynamic charts.
+
+**Execution:**
+```powershell
+streamlit run frontend/app.py
+```
+*Note: The dashboard automatically detects if the FastAPI server is running. If online, it communicates via REST endpoints. If offline, it falls back to direct in-process database and orchestrator execution.*
+
+## Phase 14 & 15 Container Deployment & Output
+
+The application is containerized for production-grade builds:
+- **Docker Compose**: Orchestrates `api` (port 8000), `frontend` (port 8501), `qdrant` vector storage, and `ollama` LLM backend.
+- **Dockerfiles**: `api.Dockerfile` and `frontend.Dockerfile` dynamically sync and cache dependencies from `pyproject.toml`.
+- **Ignore Rules**: `.dockerignore` optimizes image build times by excluding local environments and SQLite files.
+
+**Build and Run Compose:**
 ```powershell
 Copy-Item config\.env.example .env
 docker compose -f deployment/docker-compose.yml up --build
 ```
 
-Docker Compose starts the API, Qdrant, and Ollama. Claude support is optional
-and is enabled by setting `LLM_PROVIDER=claude` plus `ANTHROPIC_API_KEY`.
+### Exported Outputs
+The pipeline produces final candidate rankings saved directly to [final_rankings.json](file:///C:/Users/Admin/OneDrive/Documents/TalentGraph/data/final_rankings.json).
+

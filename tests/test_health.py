@@ -1,14 +1,11 @@
 from fastapi.testclient import TestClient
-
-from api.main import create_app
-from common.settings import Settings
+from api.main import app
 
 
 def test_health_returns_200() -> None:
-    app = create_app(Settings())
-    client = TestClient(app)
+    with TestClient(app) as client:
+        response = client.get("/health")
 
-    response = client.get("/health")
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"

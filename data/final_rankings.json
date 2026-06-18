@@ -1,0 +1,77 @@
+{
+  "j1": [
+    {
+      "candidate_id": "c1",
+      "rank": 1,
+      "final_score": 0.7540065293574538,
+      "tags": [
+        "Fast Learner"
+      ],
+      "narrative": "Candidate c1 is ranked #1 for the 'Senior Backend Engineer' role with a composite score of 0.75. They show a skill overlap score of 100.0% and a seniority alignment score of 100.0%. Key tags associated with their profile: Fast Learner.",
+      "matched_points": [
+        "Demonstrates matching proficiency in 'Python'.",
+        "Demonstrates matching proficiency in 'FastAPI'.",
+        "Demonstrates matching proficiency in 'Qdrant'.",
+        "Demonstrates matching proficiency in 'SQL'."
+      ],
+      "missing_points": [],
+      "features": {
+        "skill_overlap": 1.0,
+        "kg_skill_distance": 1.0,
+        "dense_similarity": 0.7706329524517059,
+        "bm25_score": 0.4368321678809272,
+        "trajectory_alignment": 0.6666666666666666,
+        "behavioral_score": 0.8499999940395354,
+        "seniority_match": 1.0
+      }
+    }
+  ],
+  "j2": [
+    {
+      "candidate_id": "c2",
+      "rank": 1,
+      "final_score": 0.7066662220677882,
+      "tags": [],
+      "narrative": "Candidate c2 is ranked #1 for the 'Data Engineer' role with a composite score of 0.71. They show a skill overlap score of 100.0% and a seniority alignment score of 100.0%. Key tags associated with their profile: None.",
+      "matched_points": [
+        "Demonstrates matching proficiency in 'Python'.",
+        "Demonstrates matching proficiency in 'SQL'.",
+        "Demonstrates matching proficiency in 'Airflow'.",
+        "Demonstrates matching proficiency in 'Pandas'."
+      ],
+      "missing_points": [],
+      "features": {
+        "skill_overlap": 1.0,
+        "kg_skill_distance": 1.0,
+        "dense_similarity": 0.7413457185029984,
+        "bm25_score": 0.3523613985174242,
+        "trajectory_alignment": 0.6666666666666666,
+        "behavioral_score": 0.3600000008940697,
+        "seniority_match": 1.0
+      }
+    },
+    {
+      "candidate_id": "c1",
+      "rank": 2,
+      "final_score": 0.5365328394927148,
+      "tags": [
+        "Fast Learner"
+      ],
+      "narrative": "Candidate c1 is ranked #2 for the 'Data Engineer' role with a composite score of 0.54. They show a skill overlap score of 33.3% and a seniority alignment score of 100.0%. Key tags associated with their profile: Fast Learner.",
+      "matched_points": [
+        "Demonstrates matching proficiency in 'Python'.",
+        "Demonstrates matching proficiency in 'SQL'."
+      ],
+      "missing_points": [],
+      "features": {
+        "skill_overlap": 0.3333333333333333,
+        "kg_skill_distance": 1.0,
+        "dense_similarity": 0.6490098834037781,
+        "bm25_score": 0.037182483552658865,
+        "trajectory_alignment": 0.6666666666666666,
+        "behavioral_score": 0.8499999940395354,
+        "seniority_match": 1.0
+      }
+    }
+  ]
+}
