@@ -118,6 +118,16 @@ python scripts/process_phase10.py --processed-dir data/processed --graph-dir dat
 
 This classifies candidates into descriptive tags (such as "Hidden Gem", "Fast Learner", or "Career Switcher") using rule-based feature vector thresholds and leverages an LLM (with template fallback) to write structured justifications, matched highlights, missing requirements, and a professional recruiter-facing narrative for the top candidates.
 
+## Phase 11 Evaluation Metrics
+
+After all scoring pipelines are ready, evaluate retrieval and ranking performance against naive benchmarks:
+
+```powershell
+python scripts/process_phase11.py --processed-dir data/processed --graph-dir data/knowledge_graph --embeddings-dir data/embeddings
+```
+
+This harness benchmarks the full hybrid rerank system against a naive keyword-overlap baseline using standard Information Retrieval metrics (Precision@k, Mean Reciprocal Rank, and NDCG@k) evaluated against hand-labeled candidate relevance judgments (scores 0-3).
+
 ## Docker
 
 ```powershell
