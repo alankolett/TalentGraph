@@ -108,6 +108,16 @@ python scripts/process_phase9.py --processed-dir data/processed --graph-dir data
 
 This applies a Cross-Encoder query-document matcher (mock fuzz token ratio or real sentence-transformer models) over the candidate shortlist to measure query-candidate attention, and blends the reranker similarity score with the bi-encoder composite score using the weighting parameter `alpha` (default 0.5) to produce the final top-20 ranked list.
 
+## Phase 10 Explainability Engine
+
+After Phase 9 reranking has completed, run the explainability engine to classify tags and generate match justifications:
+
+```powershell
+python scripts/process_phase10.py --processed-dir data/processed --graph-dir data/knowledge_graph --embeddings-dir data/embeddings --alpha 0.5 --top-n 5
+```
+
+This classifies candidates into descriptive tags (such as "Hidden Gem", "Fast Learner", or "Career Switcher") using rule-based feature vector thresholds and leverages an LLM (with template fallback) to write structured justifications, matched highlights, missing requirements, and a professional recruiter-facing narrative for the top candidates.
+
 ## Docker
 
 ```powershell
