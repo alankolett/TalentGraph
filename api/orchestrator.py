@@ -47,8 +47,22 @@ class RankingOrchestrator:
         self.tag_classifier = TagClassifier()
         self.explanation_generator = ExplanationGenerator(llm_provider)
 
-    def orchestrate_ranking(self, job_id: str, alpha: float = 0.5, top_n: int = 20) -> list[dict[str, Any]]:
+    def orchestrate_ranking(
+        self,
+        job_id: str,
+        alpha: float = 0.5,
+        top_n: int = 20,
+        provider: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Run the end-to-end ranking and explainability pipeline for a job."""
+        # Resolve LLM provider dynamically on each request
+        from common.llm import get_llm_provider
+        try:
+            llm = get_llm_provider(name=provider)
+        except Exception:
+            llm = None
+        self.explanation_generator.llm_provider = llm
+
         # 1. Fetch job
         job_data = self.db.get_job(job_id)
         if not job_data:

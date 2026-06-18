@@ -61,6 +61,9 @@ def health() -> dict[str, str]:
         "llm_provider": settings.llm_provider,
         "qdrant_url": settings.qdrant_url,
         "sqlite_path": str(settings.sqlite_path),
+        "has_anthropic": str(settings.has_anthropic_credentials),
+        "has_groq": str(settings.has_groq_credentials),
+        "has_gemini": str(settings.has_gemini_credentials),
     }
 
 
@@ -138,10 +141,15 @@ async def upload_candidates(
 
 
 @app.post("/rank/{job_id}")
-def run_ranking(job_id: str, alpha: float = 0.5, top_n: int = 20) -> dict[str, Any]:
+def run_ranking(
+    job_id: str,
+    alpha: float = 0.5,
+    top_n: int = 20,
+    provider: str | None = None,
+) -> dict[str, Any]:
     try:
         results = app.state.orchestrator.orchestrate_ranking(
-            job_id=job_id, alpha=alpha, top_n=top_n
+            job_id=job_id, alpha=alpha, top_n=top_n, provider=provider
         )
         return {"status": "success", "results": results}
     except ValueError as exc:

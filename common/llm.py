@@ -57,6 +57,68 @@ class ClaudeProvider:
         return "\n".join(parts).strip()
 
 
+class GroqProvider:
+    def __init__(self, api_key: str, model: str) -> None:
+        self.api_key = api_key
+        self.model = model
+
+    def generate(self, prompt: str) -> str:
+        import urllib.request
+        import json
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                return res_data["choices"][0]["message"]["content"]
+        except Exception as exc:
+            raise RuntimeError(f"Groq API call failed: {exc}") from exc
+
+
+class GeminiProvider:
+    def __init__(self, api_key: str, model: str) -> None:
+        self.api_key = api_key
+        self.model = model
+
+    def generate(self, prompt: str) -> str:
+        import urllib.request
+        import json
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": prompt}]
+                }
+            ]
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                return res_data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as exc:
+            raise RuntimeError(f"Gemini API call failed: {exc}") from exc
+
+
 def get_llm_provider(name: str | None = None, settings: Settings | None = None) -> LLMProvider:
     settings = settings or get_settings()
     provider_name = (name or settings.llm_provider).lower()
@@ -67,7 +129,20 @@ def get_llm_provider(name: str | None = None, settings: Settings | None = None) 
             model=settings.anthropic_model,
         )
 
-    if provider_name == "claude" and not settings.has_anthropic_credentials:
+    if provider_name == "groq" and settings.has_groq_credentials:
+        return GroqProvider(
+            api_key=settings.groq_api_key or "",
+            model=settings.groq_model,
+        )
+
+    if provider_name == "gemini" and settings.has_gemini_credentials:
+        return GeminiProvider(
+            api_key=settings.gemini_api_key or "",
+            model=settings.gemini_model,
+        )
+
+    # Missing credentials fallback to Ollama
+    if provider_name in {"claude", "groq", "gemini"}:
         provider_name = "ollama"
 
     if provider_name == "ollama":

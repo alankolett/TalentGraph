@@ -26,6 +26,83 @@ import {
   ChevronDown
 } from "lucide-react";
 
+const VideoBackground = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let frameId: number;
+
+    const updateOpacity = () => {
+      if (!video || video.paused) return;
+      const duration = video.duration || 10;
+      const currentTime = video.currentTime;
+
+      let opacity = 1;
+      if (currentTime < 0.5) {
+        opacity = currentTime / 0.5;
+      } else if (duration - currentTime < 0.5) {
+        opacity = (duration - currentTime) / 0.5;
+      }
+
+      video.style.opacity = Math.max(0, Math.min(1, opacity)).toString();
+      frameId = requestAnimationFrame(updateOpacity);
+    };
+
+    const handlePlay = () => {
+      frameId = requestAnimationFrame(updateOpacity);
+    };
+
+    const handleEnded = () => {
+      if (!video) return;
+      video.style.opacity = "0";
+      setTimeout(() => {
+        video.currentTime = 0;
+        video.play().catch(e => console.log("Play interrupted", e));
+      }, 100);
+    };
+
+    // Try to play when video data is loaded
+    const handleCanPlay = () => {
+      video.play().catch(e => console.log("Autoplay blocked", e));
+    };
+
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("canplay", handleCanPlay);
+
+    // Also try to play immediately
+    video.play().catch(() => {});
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("canplay", handleCanPlay);
+    };
+  }, []);
+
+  return (
+    <>
+      <div className="absolute inset-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <video 
+          ref={videoRef}
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4"
+          autoPlay 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: 0 }}
+        />
+      </div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[984px] h-[527px] opacity-90 bg-gray-950 blur-[82px] pointer-events-none z-0" />
+    </>
+  );
+};
+
+
 // Types matching Backend Schemas
 interface Job {
   job_id: string;
@@ -255,7 +332,7 @@ const Rotating3DLogo = () => {
   }, []);
 
   return (
-    <div className="w-9 h-9 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.2)]">
       <canvas ref={canvasRef} width="36" height="36" />
     </div>
   );
@@ -307,7 +384,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
   const candidatePolygon = candidatePoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <div className="flex flex-col items-center justify-center bg-slate-950/40 border border-slate-900 rounded-xl p-4">
+    <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl p-4">
       <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Feature Alignment Vector</h4>
       <svg width={width} height={height} className="overflow-visible">
         {/* Grids */}
@@ -484,22 +561,19 @@ const AnimatedMetricCard: React.FC<MetricProps> = ({ title, value, subtitle, ico
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay }}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      whileHover={{ y: -6, scale: 1.02 }}
-      className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 p-5 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-indigo-500/40 transition-colors duration-300 cursor-default"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.5 }}
+      whileHover={{ scale: 1.02, rotateY: 5, rotateX: -5 }}
+      className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.02)] backdrop-blur-xl flex items-center justify-between group overflow-hidden relative"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-      <div className="space-y-1">
-        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">{title}</span>
-        <div className="text-2xl font-black text-white leading-none font-mono">{value}</div>
-        <span className="text-[10px] text-slate-400 block">{subtitle}</span>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      <div className="z-10">
+        <h3 className="text-xl font-black text-white font-heading tracking-tight">{value}</h3>
+        <span className="text-[10px] text-slate-400 block font-sans">{title}</span>
+        <span className="text-[10px] text-slate-500 block font-sans">{subtitle}</span>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-850 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:text-purple-400 transition-all duration-300">
+      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:text-purple-400 transition-all duration-300">
         <Icon className="w-5 h-5" />
       </div>
     </motion.div>
@@ -543,13 +617,13 @@ const HolographicCandidateCard: React.FC<CandidateCardProps> = ({ result, isSele
       className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer flex justify-between items-center relative overflow-hidden group ${
         isSelected
           ? "bg-gradient-to-br from-indigo-950/45 to-purple-950/35 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
-          : "bg-slate-950/60 border-slate-900 hover:border-indigo-500/50 hover:bg-slate-900/50"
+          : "bg-white/5 border-white/10 hover:border-indigo-500/50 hover:bg-white/10"
       }`}
     >
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       
       <div className="flex items-center space-x-4 z-10">
-        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center font-mono font-bold text-sm text-indigo-400 border border-slate-800 group-hover:border-indigo-500/50 transition-colors">
+        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-mono font-bold text-sm text-indigo-400 border border-white/10 group-hover:border-indigo-500/50 transition-colors">
           #{result.rank}
         </div>
         <div>
@@ -563,7 +637,7 @@ const HolographicCandidateCard: React.FC<CandidateCardProps> = ({ result, isSele
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {result.matched_points.slice(0, 3).map((item, idx) => (
-              <span key={idx} className="text-[8px] bg-slate-900 text-slate-400 border border-slate-850 px-1.5 py-0.5 rounded font-mono">
+              <span key={idx} className="text-[8px] bg-white/5 text-slate-400 border border-white/10 px-1.5 py-0.5 rounded font-mono">
                 {item}
               </span>
             ))}
@@ -662,7 +736,6 @@ const CareerJourneyTimeline = ({ experienceYears, skills }: { experienceYears: n
 
 // --- HERO SECTION ---
 const HeroSection = ({ onEnterApp }: { onEnterApp: () => void }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isLaunching, setIsLaunching] = useState(false);
 
   const handleLaunch = () => {
@@ -672,89 +745,12 @@ const HeroSection = ({ onEnterApp }: { onEnterApp: () => void }) => {
     }, 1200); // Wait 1.2s to show loading state before entering
   };
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    let frameId: number;
-
-    const updateOpacity = () => {
-      if (!video) return;
-      const duration = video.duration || 10;
-      const currentTime = video.currentTime;
-
-      let opacity = 1;
-      if (currentTime < 0.5) {
-        opacity = currentTime / 0.5;
-      } else if (duration - currentTime < 0.5) {
-        opacity = (duration - currentTime) / 0.5;
-      }
-
-      video.style.opacity = Math.max(0, Math.min(1, opacity)).toString();
-      frameId = requestAnimationFrame(updateOpacity);
-    };
-
-    const handlePlay = () => {
-      frameId = requestAnimationFrame(updateOpacity);
-    };
-
-    const handleEnded = () => {
-      if (!video) return;
-      video.style.opacity = "0";
-      setTimeout(() => {
-        video.currentTime = 0;
-        video.play().catch(e => console.log("Play interrupted", e));
-      }, 100);
-    };
-
-    video.addEventListener("play", handlePlay);
-    video.addEventListener("ended", handleEnded);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      video.removeEventListener("play", handlePlay);
-      video.removeEventListener("ended", handleEnded);
-    };
-  }, []);
-
   return (
     <div className="relative min-h-screen flex flex-col overflow-visible bg-background font-sans">
-      <div className="absolute inset-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <video 
-          ref={videoRef}
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4"
-          autoPlay 
-          muted 
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-75"
-          style={{ opacity: 0 }}
-        />
-      </div>
-
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[984px] h-[527px] opacity-90 bg-gray-950 blur-[82px] pointer-events-none z-0" />
+      <VideoBackground />
 
       <div className="relative z-10 flex flex-col flex-1">
-        <nav className="w-full py-5 px-8 flex flex-row justify-between items-center relative">
-          <div className="flex items-center">
-            <img src="/logo.png" alt="Logo" className="h-[32px] w-auto object-contain" onError={(e) => {
-               (e.target as HTMLImageElement).style.display = 'none';
-               const fallback = document.createElement('div');
-               fallback.className = 'h-[32px] w-[32px] rounded-full bg-indigo-500/50 flex items-center justify-center font-bold text-white';
-               fallback.innerText = 'TG';
-               (e.target as HTMLImageElement).parentNode?.appendChild(fallback);
-            }} />
-          </div>
-          <div className="hidden md:flex items-center space-x-6">
-            <button className="text-foreground opacity-90 hover:opacity-100 transition flex items-center gap-1 font-medium">Features <ChevronDown className="w-4 h-4" /></button>
-            <button className="text-foreground opacity-90 hover:opacity-100 transition font-medium">Solutions</button>
-            <button className="text-foreground opacity-90 hover:opacity-100 transition font-medium">Plans</button>
-            <button className="text-foreground opacity-90 hover:opacity-100 transition flex items-center gap-1 font-medium">Learning <ChevronDown className="w-4 h-4" /></button>
-          </div>
-          <div>
-            <button onClick={onEnterApp} className="rounded-full px-4 py-2 bg-white/10 hover:bg-white/20 transition border border-white/20 text-white font-medium text-sm">Sign Up</button>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-foreground/20 to-transparent mt-[3px]" />
-        </nav>
+
 
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
           <h1 className="text-[90px] md:text-[180px] font-normal leading-[1.02] tracking-[-0.024em] font-heading whitespace-nowrap">
@@ -829,6 +825,8 @@ export default function App() {
 function PortalApp() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "benchmarks">("dashboard");
   const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
+  const [healthInfo, setHealthInfo] = useState<Record<string, string> | null>(null);
+  const [llmProvider, setLlmProvider] = useState<string>("ollama");
 
   // Data states
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -871,7 +869,9 @@ function PortalApp() {
     try {
       const res = await fetch(`${API_BASE}/health`);
       if (res.ok) {
+        const data = await res.json();
         setBackendHealthy(true);
+        setHealthInfo(data);
       } else {
         setBackendHealthy(false);
       }
@@ -1030,7 +1030,7 @@ function PortalApp() {
     setActiveCandidate(null);
     setConfetti(false);
     try {
-      const res = await fetch(`${API_BASE}/rank/${activeJobId}?alpha=${alpha}&top_n=${topN}`, {
+      const res = await fetch(`${API_BASE}/rank/${activeJobId}?alpha=${alpha}&top_n=${topN}&provider=${llmProvider}`, {
         method: "POST"
       });
       if (res.ok) {
@@ -1140,21 +1140,21 @@ function PortalApp() {
   }, [candidates, searchQuery]);
 
   return (
-    <div className="min-h-screen text-slate-100 flex overflow-hidden">
+    <div className="min-h-screen text-foreground flex overflow-hidden font-sans relative bg-background">
       {/* Dynamic Confetti Celebration */}
       <ConfettiGenerator active={confetti} />
 
-      {/* 3D Particle neural background */}
-      <NeuralBackground />
+      {/* Video Background from Hero */}
+      <VideoBackground />
 
       {/* --- SIDEBAR PANEL --- */}
-      <aside className="w-80 bg-slate-950/80 border-r border-slate-900 flex flex-col justify-between shrink-0 backdrop-blur-xl z-20">
+      <aside className="w-80 bg-white/5 border-r border-white/10 flex flex-col justify-between shrink-0 backdrop-blur-xl z-20">
         <div>
           {/* Logo with 3D Orbit Canvas Logo */}
-          <div className="p-6 border-b border-slate-900 flex items-center space-x-3">
+          <div className="p-6 border-b border-white/10 flex items-center space-x-3">
             <Rotating3DLogo />
             <div>
-              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
+              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent font-heading">
                 TalentGraph
               </h1>
               <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
@@ -1204,8 +1204,8 @@ function PortalApp() {
         </div>
 
         {/* Database Control Center (Bottom Section) */}
-        <div className="p-4 border-t border-slate-900 space-y-3 bg-slate-950/90">
-          <div className="rounded-lg bg-slate-900/60 p-3 border border-slate-850">
+        <div className="p-4 border-t border-white/10 space-y-3">
+          <div className="rounded-lg bg-white/5 p-3 border border-white/10">
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-slate-400">Total Catalog</span>
               <span className="text-slate-200 font-mono font-bold">{candidates.length}</span>
@@ -1219,7 +1219,7 @@ function PortalApp() {
           <button
             onClick={seedSampleData}
             disabled={seeding}
-            className="w-full bg-slate-900 hover:bg-slate-850 text-indigo-300 hover:text-indigo-200 border border-slate-800 hover:border-indigo-500/30 font-medium py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all duration-200 cursor-pointer"
+            className="w-full bg-white/5 hover:bg-white/10 text-indigo-300 hover:text-indigo-200 border border-white/10 hover:border-indigo-500/30 font-medium py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-2 transition-all duration-200 cursor-pointer"
           >
             {seeding ? (
               <>
@@ -1240,12 +1240,12 @@ function PortalApp() {
       </aside>
 
       {/* --- MAIN WORKSPACE AREA --- */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto z-10">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto z-10 relative">
         
         {/* --- HEADER CONTROLS --- */}
-        <header className="p-6 bg-slate-955/20 border-b border-slate-900/60 backdrop-blur-md flex items-center justify-between z-10">
+        <header className="p-6 bg-white/5 border-b border-white/10 backdrop-blur-md flex items-center justify-between z-10">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-black tracking-tight text-white capitalize bg-gradient-to-r from-white via-indigo-200 to-purple-400 bg-clip-text text-transparent">
+            <h2 className="text-xl font-black tracking-tight text-white capitalize bg-gradient-to-r from-white via-indigo-200 to-purple-400 bg-clip-text text-transparent font-heading">
               {activeTab === "dashboard" && "TalentGraph Recruiter Portal"}
               {activeTab === "catalog" && "Candidates Catalog"}
               {activeTab === "benchmarks" && "Cross-Metric Benchmark Harness"}
@@ -1253,7 +1253,7 @@ function PortalApp() {
             
             {/* Environment Status Pills */}
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border bg-slate-900 border-slate-800 text-slate-400 uppercase tracking-wider font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold border bg-white/5 border-white/10 text-slate-400 uppercase tracking-wider font-mono">
                 Model: Gemma 4
               </span>
               <button 
@@ -1272,7 +1272,7 @@ function PortalApp() {
             </div>
           </div>
 
-          <div className="text-xs text-slate-400 bg-slate-900/40 px-3 py-1.5 border border-slate-800/50 rounded-lg font-mono">
+          <div className="text-xs text-slate-400 bg-white/5 px-3 py-1.5 border border-white/10 rounded-lg font-mono">
             Host: <span className="text-indigo-400">localhost:8000</span>
           </div>
         </header>
@@ -1320,7 +1320,7 @@ function PortalApp() {
               <div className="lg:col-span-5 space-y-6">
                 
                 {/* Section A: Selection Dropdown */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-5 shadow-lg space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                       Target Job Profile
@@ -1338,7 +1338,7 @@ function PortalApp() {
                         setRankingResults([]);
                         setActiveCandidate(null);
                       }}
-                      className="flex-1 bg-slate-950 border border-slate-850 text-sm rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500/80 transition"
+                      className="flex-1 bg-white/5 border border-white/10 text-sm rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500/80 transition"
                     >
                       <option value="">-- Select active job role --</option>
                       {jobs.map((job) => (
@@ -1395,7 +1395,7 @@ function PortalApp() {
                 </div>
 
                 {/* Section B: Control Sliders */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-5 shadow-lg space-y-5">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-5 shadow-lg space-y-5">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
                     <Sliders className="w-3.5 h-3.5 text-indigo-400" />
                     <span>Scoring Configuration</span>
@@ -1440,6 +1440,47 @@ function PortalApp() {
                     />
                   </div>
 
+                  {/* LLM Provider Selection Dropdown */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <label className="text-slate-300 font-medium font-sans">Justification LLM Engine</label>
+                      <span className="text-indigo-400 font-semibold font-mono">
+                        {llmProvider === "ollama" && "Ollama"}
+                        {llmProvider === "claude" && "Claude"}
+                        {llmProvider === "groq" && "Groq"}
+                        {llmProvider === "gemini" && "Gemini"}
+                      </span>
+                    </div>
+                    <select
+                      value={llmProvider}
+                      onChange={(e) => setLlmProvider(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-850 text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+                    >
+                      <option value="ollama">Ollama (Local Host)</option>
+                      <option value="claude">Claude (Anthropic)</option>
+                      <option value="groq">Groq API (Llama-3.1)</option>
+                      <option value="gemini">Gemini API (Google)</option>
+                    </select>
+                    {/* Visual Credentials indicators */}
+                    <div className="flex space-x-2 pt-1 text-[9px] font-mono">
+                      {llmProvider === "claude" && (
+                        <span className={`px-2 py-0.5 rounded border ${healthInfo?.has_anthropic === "True" ? "bg-emerald-950/40 text-emerald-400 border-emerald-900/40" : "bg-red-950/40 text-red-400 border-red-900/40 animate-pulse"}`}>
+                          {healthInfo?.has_anthropic === "True" ? "Claude Key: Loaded" : "Claude Key: Missing in .env"}
+                        </span>
+                      )}
+                      {llmProvider === "groq" && (
+                        <span className={`px-2 py-0.5 rounded border ${healthInfo?.has_groq === "True" ? "bg-emerald-950/40 text-emerald-400 border-emerald-900/40" : "bg-red-950/40 text-red-400 border-red-900/40 animate-pulse"}`}>
+                          {healthInfo?.has_groq === "True" ? "Groq Key: Loaded" : "Groq Key: Missing in .env"}
+                        </span>
+                      )}
+                      {llmProvider === "gemini" && (
+                        <span className={`px-2 py-0.5 rounded border ${healthInfo?.has_gemini === "True" ? "bg-emerald-950/40 text-emerald-400 border-emerald-900/40" : "bg-red-950/40 text-red-400 border-red-900/40 animate-pulse"}`}>
+                          {healthInfo?.has_gemini === "True" ? "Gemini Key: Loaded" : "Gemini Key: Missing in .env"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Run Pipeline Button */}
                   <button
                     onClick={runRanking}
@@ -1461,7 +1502,7 @@ function PortalApp() {
                 </div>
 
                 {/* Section C: Quick Add Job Form */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-5 shadow-lg space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
                     <PlusCircle className="w-3.5 h-3.5 text-indigo-400" />
                     <span>Create Custom Job Role</span>
@@ -1473,7 +1514,7 @@ function PortalApp() {
                         placeholder="Job Title (e.g. Senior Data Analyst)"
                         value={newJobTitle}
                         onChange={(e) => setNewJobTitle(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-850 text-xs rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-white/5 border border-white/10 text-xs rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500"
                       />
                     </div>
                     <div>
@@ -1482,7 +1523,7 @@ function PortalApp() {
                         value={newJobDesc}
                         onChange={(e) => setNewJobDesc(e.target.value)}
                         rows={2}
-                        className="w-full bg-slate-950 border border-slate-850 text-xs rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 font-sans"
+                        className="w-full bg-white/5 border border-white/10 text-xs rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 font-sans"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1491,21 +1532,21 @@ function PortalApp() {
                         placeholder="Must Haves (comma separated)"
                         value={newJobMust}
                         onChange={(e) => setNewJobMust(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-850 text-[10px] rounded px-2.5 py-1.5 text-slate-200 focus:outline-none"
+                        className="w-full bg-white/5 border border-white/10 text-[10px] rounded px-2.5 py-1.5 text-slate-200 focus:outline-none"
                       />
                       <input
                         type="text"
                         placeholder="Nice To Haves (comma separated)"
                         value={newJobNice}
                         onChange={(e) => setNewJobNice(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-850 text-[10px] rounded px-2.5 py-1.5 text-slate-200 focus:outline-none"
+                        className="w-full bg-white/5 border border-white/10 text-[10px] rounded px-2.5 py-1.5 text-slate-200 focus:outline-none"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={newJobSeniority}
                         onChange={(e) => setNewJobSeniority(e.target.value)}
-                        className="bg-slate-950 border border-slate-850 text-[10px] rounded px-2.5 py-1.5 text-slate-300"
+                        className="bg-white/5 border border-white/10 text-[10px] rounded px-2.5 py-1.5 text-slate-300"
                       >
                         <option value="Junior">Junior</option>
                         <option value="Mid">Mid</option>
@@ -1517,7 +1558,7 @@ function PortalApp() {
                         placeholder="Location"
                         value={newJobLocation}
                         onChange={(e) => setNewJobLocation(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-850 text-[10px] rounded px-2.5 py-1.5 text-slate-200"
+                        className="w-full bg-white/5 border border-white/10 text-[10px] rounded px-2.5 py-1.5 text-slate-200"
                       />
                     </div>
                     <button
@@ -1534,7 +1575,7 @@ function PortalApp() {
               <div className="lg:col-span-7 space-y-6">
                 
                 {/* Ranking Output List with staggered holographic cards */}
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-6 shadow-lg space-y-4">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 shadow-lg space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Ranking Results Shortlist ({rankingResults.length})
                   </h3>
@@ -1594,7 +1635,7 @@ function PortalApp() {
                         </div>
                         <button
                           onClick={() => setActiveCandidate(null)}
-                          className="p-1 rounded bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-white"
+                          className="p-1 rounded bg-white/5 border border-white/10 hover:border-slate-700 text-slate-400 hover:text-white"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1700,7 +1741,7 @@ function PortalApp() {
             <div className="space-y-6">
               
               {/* Header search bar and upload options */}
-              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
                 
                 {/* Search Bar */}
                 <div className="relative w-full md:w-96">
@@ -1743,7 +1784,7 @@ function PortalApp() {
                           placeholder="e.g. c_ml_specialist"
                           value={newCandId}
                           onChange={(e) => setNewCandId(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-850 text-xs rounded px-2.5 py-1.5 text-slate-200"
+                          className="w-full bg-white/5 border border-white/10 text-xs rounded px-2.5 py-1.5 text-slate-200"
                         />
                       </div>
                       <div>
@@ -1752,7 +1793,7 @@ function PortalApp() {
                           type="number"
                           value={newCandExp}
                           onChange={(e) => setNewCandExp(parseFloat(e.target.value))}
-                          className="w-full bg-slate-950 border border-slate-850 text-xs rounded px-2.5 py-1.5 text-slate-200"
+                          className="w-full bg-white/5 border border-white/10 text-xs rounded px-2.5 py-1.5 text-slate-200"
                         />
                       </div>
                       <div>
@@ -1823,7 +1864,7 @@ function PortalApp() {
               )}
 
               {/* Table list of all candidates */}
-              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl overflow-hidden shadow-lg">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-lg">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="bg-slate-950/80 border-b border-slate-850 text-xs font-bold uppercase text-slate-400 tracking-wider">
@@ -1886,7 +1927,7 @@ function PortalApp() {
             <div className="space-y-6">
               
               {/* Harness introduction */}
-              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl p-6 shadow-lg space-y-3">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 shadow-lg space-y-3">
                 <div className="flex items-center space-x-2.5">
                   <Layers className="w-5 h-5 text-indigo-400" />
                   <h3 className="text-sm font-bold text-white">Candidate Trade-Off Matrix</h3>
@@ -1899,7 +1940,7 @@ function PortalApp() {
 
               {/* Benchmark Table with animated progress bars */}
               {rankingResults.length > 0 ? (
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-xl overflow-hidden shadow-lg">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-lg">
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="bg-slate-950/80 border-b border-slate-855 text-xs font-bold uppercase text-slate-400 tracking-wider">
