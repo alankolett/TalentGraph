@@ -98,6 +98,16 @@ python scripts/process_phase8.py --processed-dir data/processed --graph-dir data
 
 This calculates a 7-dimensional normalized feature vector (Jaccard skill overlap, graph skill distance, dense similarity, BM25 sigmoidal score, trajectory alignments, behavioral scores, seniority match) for all candidates passing retrieval masks, and computes final composite relevance scores using configurable, renormalized weights.
 
+## Phase 9 Cross-Encoder Reranking
+
+After Phase 8 scoring has completed, run the cross-encoder reranker to blend scores:
+
+```powershell
+python scripts/process_phase9.py --processed-dir data/processed --graph-dir data/knowledge_graph --embeddings-dir data/embeddings --alpha 0.5 --top-n 20
+```
+
+This applies a Cross-Encoder query-document matcher (mock fuzz token ratio or real sentence-transformer models) over the candidate shortlist to measure query-candidate attention, and blends the reranker similarity score with the bi-encoder composite score using the weighting parameter `alpha` (default 0.5) to produce the final top-20 ranked list.
+
 ## Docker
 
 ```powershell
