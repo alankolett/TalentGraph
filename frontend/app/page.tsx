@@ -2,10 +2,14 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
+import RemixLandingPage from "./components/RemixLandingPage";
 import {
   LayoutDashboard,
   Users,
   Sliders,
+  SlidersHorizontal,
+  Briefcase,
+  Activity,
   Play,
   Database,
   Search,
@@ -205,7 +209,7 @@ const NeuralBackground = () => {
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "rgba(6, 9, 19, 0.97)"; // Deep navy backdrop
+      ctx.fillStyle = "#F8FAFC"; // Clean light crystalline background
       ctx.fillRect(0, 0, width, height);
 
       // Connect nodes
@@ -229,7 +233,7 @@ const NeuralBackground = () => {
           }
         }
 
-        ctx.fillStyle = "rgba(129, 140, 248, 0.35)"; // Glowing indigo
+        ctx.fillStyle = "rgba(79, 70, 229, 0.25)"; // Glowing indigo
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -238,8 +242,8 @@ const NeuralBackground = () => {
           const p2 = particles[j];
           const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
           if (dist < 120) {
-            const alpha = (1 - dist / 120) * 0.15;
-            ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`; // Purple lines
+            const alpha = (1 - dist / 120) * 0.1;
+            ctx.strokeStyle = `rgba(79, 70, 229, ${alpha})`; // Soft indigo lines
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -285,7 +289,7 @@ const Rotating3DLogo = () => {
       ctx.translate(width / 2, height / 2);
 
       // Draw orbit rings
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.4)";
+      ctx.strokeStyle = "rgba(79, 70, 229, 0.4)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.ellipse(0, 0, 15, 5, Math.PI / 4 + angle * 0.2, 0, Math.PI * 2);
@@ -297,8 +301,8 @@ const Rotating3DLogo = () => {
 
       // Draw center rotating sphere
       const gradient = ctx.createRadialGradient(-2, -2, 1, 0, 0, 8);
-      gradient.addColorStop(0, "#c084fc"); // Purple-400
-      gradient.addColorStop(1, "#6366f1"); // Indigo-500
+      gradient.addColorStop(0, "#818cf8"); // Indigo-400
+      gradient.addColorStop(1, "#4f46e5"); // Indigo-600
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
@@ -313,8 +317,8 @@ const Rotating3DLogo = () => {
       const ry1 = x1 * sinA + y1 * cosA;
 
       ctx.fillStyle = "#ffffff";
-      ctx.shadowColor = "#a855f7";
-      ctx.shadowBlur = 6;
+      ctx.shadowColor = "#4f46e5";
+      ctx.shadowBlur = 4;
       ctx.beginPath();
       ctx.arc(rx1, ry1, 2, 0, Math.PI * 2);
       ctx.fill();
@@ -332,7 +336,7 @@ const Rotating3DLogo = () => {
   }, []);
 
   return (
-    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm">
       <canvas ref={canvasRef} width="36" height="36" />
     </div>
   );
@@ -384,8 +388,8 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
   const candidatePolygon = candidatePoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl p-4">
-      <h4 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Feature Alignment Vector</h4>
+    <div className="flex flex-col items-center justify-center bg-white/60 border border-slate-200/60 rounded-xl p-4 shadow-sm">
+      <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 font-sans">Feature Alignment Vector</h4>
       <svg width={width} height={height} className="overflow-visible">
         {/* Grids */}
         {gridPolygons.map((points, idx) => (
@@ -393,7 +397,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
             key={idx}
             points={points}
             fill="none"
-            stroke="rgba(148, 163, 184, 0.12)"
+            stroke="rgba(15, 23, 42, 0.08)"
             strokeWidth="1"
             strokeDasharray={idx < 3 ? "3,3" : "none"}
           />
@@ -411,7 +415,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
               y1={cy}
               x2={x}
               y2={y}
-              stroke="rgba(148, 163, 184, 0.15)"
+              stroke="rgba(15, 23, 42, 0.1)"
               strokeWidth="1"
             />
           );
@@ -420,8 +424,8 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
         {/* Candidate Polygon */}
         <polygon
           points={candidatePolygon}
-          fill="rgba(99, 102, 241, 0.2)"
-          stroke="rgba(129, 140, 248, 0.8)"
+          fill="rgba(79, 70, 229, 0.12)"
+          stroke="rgba(79, 70, 229, 0.8)"
           strokeWidth="2"
           className="transition-all duration-500"
         />
@@ -433,9 +437,9 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
               cx={p.x}
               cy={p.y}
               r="4"
-              fill="rgb(168, 85, 247)"
+              fill="#10B981" // Emerald nodes
               stroke="white"
-              strokeWidth="1"
+              strokeWidth="1.5"
             />
             {/* Axis Label */}
             {(() => {
@@ -449,7 +453,7 @@ const RadarChart: React.FC<RadarChartProps> = ({ features }) => {
                 <text
                   x={lx}
                   y={ly}
-                  fill="rgb(148, 163, 184)"
+                  fill="#64748B"
                   fontSize="8.5"
                   fontWeight="600"
                   textAnchor={textAnchor}
@@ -542,38 +546,20 @@ interface MetricProps {
 }
 
 const AnimatedMetricCard: React.FC<MetricProps> = ({ title, value, subtitle, icon: Icon, delay }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const rotateX = useSpring(useTransform(y, [-50, 50], [8, -8]), { damping: 20, stiffness: 150 });
-  const rotateY = useSpring(useTransform(x, [-50, 50], [-8, 8]), { damping: 20, stiffness: 150 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    x.set((e.clientX - rect.left - rect.width / 2) * 0.3);
-    y.set((e.clientY - rect.top - rect.height / 2) * 0.3);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
-      whileHover={{ scale: 1.02, rotateY: 5, rotateX: -5 }}
-      className="p-5 rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.02)] backdrop-blur-xl flex items-center justify-between group overflow-hidden relative"
+      whileHover={{ scale: 1.02 }}
+      className="p-5 bg-white/70 border border-slate-200/80 rounded-2xl shadow-luxe flex justify-between items-start backdrop-blur-md"
     >
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       <div className="z-10">
-        <h3 className="text-xl font-black text-white font-heading tracking-tight">{value}</h3>
-        <span className="text-[10px] text-slate-400 block font-sans">{title}</span>
+        <h3 className="text-xl font-black text-slate-900 font-heading tracking-tight">{value}</h3>
+        <span className="text-[10px] text-slate-400 block font-sans font-semibold uppercase">{title}</span>
         <span className="text-[10px] text-slate-500 block font-sans">{subtitle}</span>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:text-purple-400 transition-all duration-300">
+      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-indigo-600 transition-all duration-300">
         <Icon className="w-5 h-5" />
       </div>
     </motion.div>
@@ -613,31 +599,31 @@ const HolographicCandidateCard: React.FC<CandidateCardProps> = ({ result, isSele
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(168, 85, 247, 0.25)" }}
+      whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.95)" }}
       className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer flex justify-between items-center relative overflow-hidden group ${
         isSelected
-          ? "bg-gradient-to-br from-indigo-950/45 to-purple-950/35 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
-          : "bg-white/5 border-white/10 hover:border-indigo-500/50 hover:bg-white/10"
+          ? "bg-gradient-to-br from-indigo-50/70 to-violet-50/50 border-indigo-500/80 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.08)]"
+          : "bg-white/40 border-slate-200/60 hover:border-indigo-500/50 hover:bg-white"
       }`}
     >
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       
       <div className="flex items-center space-x-4 z-10">
-        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-mono font-bold text-sm text-indigo-400 border border-white/10 group-hover:border-indigo-500/50 transition-colors">
+        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-mono font-bold text-sm text-indigo-600 border border-slate-100 group-hover:border-indigo-500/30 transition-colors shadow-sm">
           #{result.rank}
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <h4 className="text-sm font-bold text-slate-100 group-hover:text-white transition-colors">{result.candidate_id}</h4>
+            <h4 className="text-sm font-bold text-slate-850 group-hover:text-slate-950 transition-colors">{result.candidate_id}</h4>
             {result.tags.slice(0, 2).map((t, i) => (
-              <span key={i} className="text-[9px] font-semibold bg-indigo-950/40 border border-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded">
+              <span key={i} className="text-[9px] font-semibold bg-indigo-50 border border-indigo-100/50 text-indigo-600 px-1.5 py-0.5 rounded">
                 {t}
               </span>
             ))}
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {result.matched_points.slice(0, 3).map((item, idx) => (
-              <span key={idx} className="text-[8px] bg-white/5 text-slate-400 border border-white/10 px-1.5 py-0.5 rounded font-mono">
+              <span key={idx} className="text-[8px] bg-slate-50 text-slate-500 border border-slate-100 px-1.5 py-0.5 rounded font-mono">
                 {item}
               </span>
             ))}
@@ -647,10 +633,10 @@ const HolographicCandidateCard: React.FC<CandidateCardProps> = ({ result, isSele
 
       <div className="flex items-center space-x-3 text-right z-10">
         <div>
-          <div className="text-[9px] text-slate-500 uppercase font-bold tracking-wider leading-none">Blended</div>
-          <div className="text-base font-black text-indigo-400 font-mono mt-0.5 group-hover:text-purple-400 transition-colors">{scorePct}%</div>
+          <div className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none font-sans">Blended</div>
+          <div className="text-base font-black text-indigo-600 font-mono mt-0.5 group-hover:text-indigo-700 transition-colors">{scorePct}%</div>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
       </div>
     </motion.div>
   );
@@ -658,29 +644,29 @@ const HolographicCandidateCard: React.FC<CandidateCardProps> = ({ result, isSele
 
 // 7. Resume Highlight Pulse Renderer
 const HighlightedResume = ({ text, mustHave, niceToHave }: { text: string, mustHave: string[], niceToHave: string[] }) => {
-  if (!text) return <p className="text-slate-500 italic">No resume data available.</p>;
+  if (!text) return <p className="text-slate-400 italic">No resume data available.</p>;
   const skills = [...mustHave, ...niceToHave];
-  if (skills.length === 0) return <p className="text-slate-400 leading-relaxed font-mono whitespace-pre-wrap">{text}</p>;
+  if (skills.length === 0) return <p className="text-slate-600 leading-relaxed font-mono whitespace-pre-wrap">{text}</p>;
 
   const pattern = new RegExp(`\\b(${skills.join("|")})\\b`, "gi");
   const parts = text.split(pattern);
 
   return (
-    <p className="text-slate-400 leading-relaxed font-mono whitespace-pre-wrap text-[11px]">
+    <p className="text-slate-650 leading-relaxed font-mono whitespace-pre-wrap text-[11px]">
       {parts.map((part, idx) => {
         const isMust = mustHave.some((s) => s.toLowerCase() === part.toLowerCase());
         const isNice = niceToHave.some((s) => s.toLowerCase() === part.toLowerCase());
 
         if (isMust) {
           return (
-            <span key={idx} className="relative inline-block px-1 rounded bg-rose-950/40 border border-rose-900/60 text-rose-300 font-semibold animate-pulse">
+            <span key={idx} className="relative inline-block px-1 rounded bg-red-50 border border-red-200/50 text-red-500 font-semibold">
               {part}
             </span>
           );
         }
         if (isNice) {
           return (
-            <span key={idx} className="relative inline-block px-1 rounded bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 font-semibold animate-pulse">
+            <span key={idx} className="relative inline-block px-1 rounded bg-emerald-50 border border-emerald-200/50 text-emerald-600 font-semibold">
               {part}
             </span>
           );
@@ -695,21 +681,21 @@ const HighlightedResume = ({ text, mustHave, niceToHave }: { text: string, mustH
 const CareerJourneyTimeline = ({ experienceYears, skills }: { experienceYears: number, skills: string[] }) => {
   return (
     <div className="space-y-4">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Professional Journey</h4>
+      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Professional Journey</h4>
       <div className="relative pl-6 border-l border-indigo-500/30 space-y-4">
         {/* Timeline top dot */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full bg-indigo-500 border border-slate-900 shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+          className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full bg-indigo-650 border border-white shadow-sm"
         />
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold text-white">Advanced Technical Execution</span>
-            <span className="text-[9px] bg-indigo-950/40 text-indigo-300 border border-indigo-900/60 px-1.5 py-0.2 rounded">Current</span>
+            <span className="text-xs font-bold text-slate-800">Advanced Technical Execution</span>
+            <span className="text-[9px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.2 rounded font-semibold font-sans">Current</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
             Demonstrates specialized engineering competency in: {skills.slice(0, 3).join(", ")}.
           </p>
         </div>
@@ -720,11 +706,11 @@ const CareerJourneyTimeline = ({ experienceYears, skills }: { experienceYears: n
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="absolute -left-[29.5px] top-1.5 w-3 h-3 rounded-full bg-purple-500 border border-slate-900"
+            className="absolute -left-[29.5px] top-1.5 w-3 h-3 rounded-full bg-violet-500 border border-white"
           />
           <div>
-            <div className="text-xs font-bold text-white">Industrial Experience base</div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+            <div className="text-xs font-bold text-slate-800">Industrial Experience base</div>
+            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
               Synthesizing {experienceYears || 3} years of industrial coding history and system development.
             </p>
           </div>
@@ -815,7 +801,7 @@ export default function App() {
   const [showPortal, setShowPortal] = useState(false);
 
   if (!showPortal) {
-    return <HeroSection onEnterApp={() => setShowPortal(true)} />;
+    return <RemixLandingPage onEnterApp={() => setShowPortal(true)} />;
   }
 
   return <PortalApp />;
