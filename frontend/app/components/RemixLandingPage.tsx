@@ -12,11 +12,8 @@ import {
   Zap, 
   Check, 
   Copy, 
-  Mail, 
   Activity, 
-  Users,
-  Database,
-  Briefcase
+  Database
 } from "lucide-react";
 
 // Register GSAP ScrollTrigger
@@ -349,12 +346,12 @@ function AnalyzeCandidateSignals(candidateId: string) {
   }, []);
 
   // ==================== NAV LINK BRACKETS MICRO-INTERACTION ====================
-  const handleLinkEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleLinkEnter = (e: React.MouseEvent<HTMLElement>) => {
     const brackets = e.currentTarget.querySelectorAll(".bracket");
     gsap.to(brackets, { x: (i) => (i === 0 ? -3 : 3), duration: 0.2 });
   };
 
-  const handleLinkLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleLinkLeave = (e: React.MouseEvent<HTMLElement>) => {
     const brackets = e.currentTarget.querySelectorAll(".bracket");
     gsap.to(brackets, { x: 0, duration: 0.2 });
   };
@@ -469,7 +466,7 @@ function AnalyzeCandidateSignals(candidateId: string) {
         <section className="min-h-[70vh] flex items-center justify-center">
           <div className="bento-glass-card p-8 md:p-12 w-full max-w-3xl text-center space-y-6">
             <span className="text-[11px] font-bold tracking-[0.25em] text-slate-400 uppercase block font-mono">
-              // Neural Recruiter Suite
+              {"// Neural Recruiter Suite"}
             </span>
             <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-[-0.04em] leading-[1.1] font-heading">
               A Crystalline Graph Matrix For Talent Telemetry
@@ -545,7 +542,7 @@ function AnalyzeCandidateSignals(candidateId: string) {
         <section>
           <div className="bento-glass-card p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             <div className="flex flex-col justify-center space-y-4">
-              <span className="text-xs font-mono text-indigo-600 tracking-widest uppercase block">// Declarative Scoring Code</span>
+              <span className="text-xs font-mono text-indigo-600 tracking-widest uppercase block">{"// Declarative Scoring Code"}</span>
               <h3 className="text-2xl md:text-3xl font-black text-slate-900 font-heading">Interactive Scoring Pipeline</h3>
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed">
                 Tune rank operations dynamically using the sliding configuration weights. Read, verify, and copy candidate evaluations vectors directly to workspace environments.
@@ -563,9 +560,9 @@ function AnalyzeCandidateSignals(candidateId: string) {
               
               <pre className="text-slate-400 select-none overflow-x-auto text-[10px] md:text-[11px] leading-relaxed">
                 <code>
-                  <span className="text-indigo-400">import</span> {"{ rankCandidate, cosineDistance }"} <span className="text-indigo-400">from</span> <span className="text-emerald-400">'talentgraph/core'</span>;<br />
+                  <span className="text-indigo-400">import</span> {"{ rankCandidate, cosineDistance }"} <span className="text-indigo-400">from</span> <span className="text-emerald-400">&apos;talentgraph/core&apos;</span>;<br />
                   <span className="text-indigo-400">function</span> <span className="text-amber-300">AnalyzeCandidateSignals</span>(id) {"{"}<br />
-                  &nbsp;&nbsp;<span className="text-slate-500">// Compute semantic vector weights</span><br />
+                  &nbsp;&nbsp;<span className="text-slate-500">{"// Compute semantic vector weights"}</span><br />
                   &nbsp;&nbsp;<span className="text-indigo-400">const</span> dist = <span className="text-amber-300">cosineDistance</span>(cand, job);<br />
                   &nbsp;&nbsp;<span className="text-indigo-400">return</span> <span className="text-amber-300">rankCandidate</span>(id, dist, <span className="text-emerald-500">0.5</span>);<br />
                   {"}"}
