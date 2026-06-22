@@ -167,3 +167,4 @@ docker compose -f deployment/docker-compose.yml up --build
 ### Exported Outputs
 The pipeline produces final candidate rankings saved directly to [final_rankings.json](file:///C:/Users/Admin/OneDrive/Documents/TalentGraph/data/final_rankings.json).
 
+Made using Agentic Engineering and Machine learning not Vibe Coding
