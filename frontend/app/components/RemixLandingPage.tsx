@@ -13,7 +13,9 @@ import {
   Check, 
   Copy, 
   Activity, 
-  Database
+  Database,
+  Sun,
+  Moon
 } from "lucide-react";
 
 // Register GSAP ScrollTrigger
@@ -30,6 +32,31 @@ export default function RemixLandingPage({ onEnterApp }: RemixLandingPageProps) 
   const magneticRef = useRef<HTMLButtonElement>(null);
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialTheme = savedTheme || (systemPrefersDark ? "dark" : "light");
+    setTheme(initialTheme);
+    if (initialTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const codeString = `import { type Handle, on } from 'talentgraph/core';
 
@@ -103,96 +130,129 @@ function AnalyzeCandidateSignals(candidateId: string) {
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 5);
 
-    // Light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
     dirLight.position.set(5, 5, 5);
     scene.add(dirLight);
 
     // 1. Constellation Starfield System
-    const starCount = 2000;
+    const starCount = 1500;
     const starGeometry = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i++) {
-      starPositions[i] = (Math.random() - 0.5) * 20;
+      starPositions[i] = (Math.random() - 0.5) * 22;
     }
     starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
 
-    // Dark-slate points representing light-mode constellations
     const starMaterial = new THREE.PointsMaterial({
-      color: 0x4f46e5, // Indigo accent
+      color: 0x4f46e5,
       size: 0.05,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.12,
       sizeAttenuation: true,
     });
     const starField = new THREE.Points(starGeometry, starMaterial);
     scene.add(starField);
 
-    // 2. The Planetary Horizon Curve (Bottom-Right quadrant)
-    const sphereGeometry = new THREE.SphereGeometry(3.5, 64, 64);
+    // 2. The 3D Floating Talent Network Graph
+    const networkGroup = new THREE.Group();
+    scene.add(networkGroup);
 
-    // Custom Shader Material implementing bioluminescent gradient & streams
-    const vertexShaderCode = `
-      uniform float uTime;
-      varying vec3 vPosition;
-      varying float vStreamIntensity;
+    // Nodes data
+    const nodesData = [
+      // Jobs (Center/core)
+      { id: "job-backend", name: "Job: Senior Backend Engineer", type: "job", size: 0.26, color: "#4F46E5", pos: new THREE.Vector3(0, 0, 0) },
+      { id: "job-mlops", name: "Job: Lead MLOps Platform Architect", type: "job", size: 0.26, color: "#10B981", pos: new THREE.Vector3(1.6, 0.9, -0.6) },
+      { id: "job-frontend", name: "Job: Senior React Developer", type: "job", size: 0.26, color: "#8B5CF6", pos: new THREE.Vector3(-1.6, -0.9, 0.6) },
+      
+      // Candidates
+      { id: "cand-elena", name: "Elena Rostova (Match: 98.4%)", type: "candidate", size: 0.18, color: "#6366F1", pos: new THREE.Vector3(0.8, -1.1, 0.7) },
+      { id: "cand-marcus", name: "Marcus Vance (Match: 94.1%)", type: "candidate", size: 0.18, color: "#8B5CF6", pos: new THREE.Vector3(2.4, 0.2, -0.9) },
+      { id: "cand-siddharth", name: "Siddharth Nair (Match: 89.7%)", type: "candidate", size: 0.18, color: "#EF4444", pos: new THREE.Vector3(-0.6, 1.3, -0.5) },
+      { id: "cand-octocat", name: "Structured Sandbox Profile", type: "candidate", size: 0.16, color: "#3B82F6", pos: new THREE.Vector3(-2.4, -0.2, 0.9) },
 
-      void main() {
-        vPosition = position;
-        vec3 pos = position;
-        
-        // Soft wave distortion
-        float wave = sin(pos.x * 2.0 + uTime * 1.5) * cos(pos.y * 2.0 + uTime * 1.5) * 0.06;
-        pos += normal * wave;
+      // Skills (Branching out)
+      { id: "skill-python", name: "Skill: Python", type: "skill", size: 0.08, color: "#10B981", pos: new THREE.Vector3(1.7, -1.8, 0.3) },
+      { id: "skill-fastapi", name: "Skill: FastAPI", type: "skill", size: 0.08, color: "#4F46E5", pos: new THREE.Vector3(0.3, -2.1, 0.9) },
+      { id: "skill-qdrant", name: "Skill: Qdrant", type: "skill", size: 0.08, color: "#EF4444", pos: new THREE.Vector3(1.0, -0.5, 1.7) },
+      { id: "skill-pytorch", name: "Skill: PyTorch", type: "skill", size: 0.08, color: "#EC4899", pos: new THREE.Vector3(3.2, 0.8, -1.3) },
+      { id: "skill-transformers", name: "Skill: Transformers", type: "skill", size: 0.08, color: "#8B5CF6", pos: new THREE.Vector3(2.9, -0.6, -0.4) },
+      { id: "skill-react", name: "Skill: React", type: "skill", size: 0.08, color: "#06B6D4", pos: new THREE.Vector3(-1.9, -1.9, 1.3) },
+      { id: "skill-typescript", name: "Skill: TypeScript", type: "skill", size: 0.08, color: "#3B82F6", pos: new THREE.Vector3(-2.9, -1.1, 0.3) }
+    ];
 
-        // High-velocity stream pulse
-        float pulse = sin(pos.z * 1.8 + uTime * 8.0);
-        if(pulse > 0.88) {
-          pos += normal * ((pulse - 0.88) * 0.25);
-          vStreamIntensity = 1.0;
-        } else {
-          vStreamIntensity = 0.15;
-        }
-        
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `;
+    // Links data
+    const linksData = [
+      { from: "job-backend", to: "cand-elena" },
+      { from: "job-mlops", to: "cand-marcus" },
+      { from: "job-backend", to: "cand-siddharth" },
+      { from: "job-frontend", to: "cand-octocat" },
+      
+      { from: "cand-elena", to: "skill-python" },
+      { from: "cand-elena", to: "skill-fastapi" },
+      { from: "cand-elena", to: "skill-qdrant" },
+      
+      { from: "cand-marcus", to: "skill-python" },
+      { from: "cand-marcus", to: "skill-pytorch" },
+      { from: "cand-marcus", to: "skill-transformers" },
+      
+      { from: "cand-siddharth", to: "skill-python" },
+      { from: "cand-siddharth", to: "skill-fastapi" },
+      
+      { from: "cand-octocat", to: "skill-react" },
+      { from: "cand-octocat", to: "skill-typescript" }
+    ];
 
-    const fragmentShaderCode = `
-      uniform vec3 uColorIndigo;
-      uniform vec3 uColorEmerald;
-      varying vec3 vPosition;
-      varying float vStreamIntensity;
+    const nodeMeshes: THREE.Mesh[] = [];
+    const sphereGeo = new THREE.SphereGeometry(1, 16, 16);
 
-      void main() {
-        // Crystalline gradient
-        vec3 color = mix(uColorIndigo, uColorEmerald, (vPosition.y + 3.5) / 7.0);
-        
-        // Add brightness at data stream nodes
-        color += vec3(vStreamIntensity * 0.35);
-        
-        gl_FragColor = vec4(color, 0.22);
-      }
-    `;
-
-    const planetaryMaterial = new THREE.ShaderMaterial({
-      vertexShader: vertexShaderCode,
-      fragmentShader: fragmentShaderCode,
-      uniforms: {
-        uTime: { value: 0 },
-        uColorIndigo: { value: new THREE.Color("#4F46E5") }, // accent-indigo
-        uColorEmerald: { value: new THREE.Color("#10B981") }, // accent-emerald
-      },
-      transparent: true,
-      wireframe: true,
+    nodesData.forEach((node) => {
+      const nodeMat = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(node.color),
+        emissive: new THREE.Color(node.color),
+        emissiveIntensity: 0.4,
+        shininess: 90,
+        transparent: true,
+        opacity: 0.9
+      });
+      
+      const mesh = new THREE.Mesh(sphereGeo, nodeMat);
+      mesh.scale.setScalar(node.size);
+      mesh.position.copy(node.pos);
+      mesh.userData = { id: node.id, name: node.name, type: node.type, baseScale: node.size, baseColor: node.color };
+      networkGroup.add(mesh);
+      nodeMeshes.push(mesh);
     });
 
-    const planetaryMesh = new THREE.Mesh(sphereGeometry, planetaryMaterial);
-    planetaryMesh.position.set(2.4, -2.8, -1.0);
-    scene.add(planetaryMesh);
+    const linkLines: THREE.Line[] = [];
+    const linkMaterials: THREE.LineBasicMaterial[] = [];
+
+    linksData.forEach((link) => {
+      const fromNode = nodesData.find((n) => n.id === link.from);
+      const toNode = nodesData.find((n) => n.id === link.to);
+      if (!fromNode || !toNode) return;
+
+      const points = [fromNode.pos, toNode.pos];
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+      
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x4f46e5,
+        transparent: true,
+        opacity: 0.12,
+        linewidth: 1
+      });
+      
+      const line = new THREE.Line(lineGeo, lineMat);
+      networkGroup.add(line);
+      linkLines.push(line);
+      linkMaterials.push(lineMat);
+    });
+
+    // Set initial network position
+    networkGroup.position.set(1.4, -0.6, 0.0);
 
     // ==================== GSAP SCROLL RIGGING ====================
     const webglTimeline = gsap.timeline({
@@ -206,26 +266,28 @@ function AnalyzeCandidateSignals(candidateId: string) {
     });
 
     webglTimeline.to(camera.position, {
-      y: -2.3,
-      x: 0.4,
+      y: -3.6,
+      x: -0.1,
+      z: 4.2,
       ease: "none",
     }, 0);
 
     webglTimeline.to(camera.rotation, {
-      x: THREE.MathUtils.degToRad(12),
+      x: THREE.MathUtils.degToRad(8),
+      y: THREE.MathUtils.degToRad(-12),
       ease: "none",
     }, 0);
 
-    webglTimeline.to(planetaryMesh.scale, {
-      x: 1.25,
-      y: 1.25,
-      z: 1.25,
+    webglTimeline.to(networkGroup.position, {
+      x: -0.6,
+      y: -1.9,
+      z: 1.6,
       ease: "none",
     }, 0);
 
-    webglTimeline.to(planetaryMesh.rotation, {
-      z: THREE.MathUtils.degToRad(-8),
-      y: THREE.MathUtils.degToRad(25),
+    webglTimeline.to(networkGroup.rotation, {
+      y: THREE.MathUtils.degToRad(180),
+      x: THREE.MathUtils.degToRad(35),
       ease: "none",
     }, 0);
 
@@ -238,6 +300,52 @@ function AnalyzeCandidateSignals(candidateId: string) {
     };
     window.addEventListener("resize", handleResize);
 
+    // ==================== MUTATION OBSERVER (THEME SYNC) ====================
+    const updateWebGLTheme = (dark: boolean) => {
+      if (dark) {
+        starMaterial.color.setHex(0xffffff);
+        starMaterial.opacity = 0.18;
+        linkMaterials.forEach((mat) => {
+          mat.color.setHex(0x818cf8);
+          mat.opacity = 0.20;
+        });
+      } else {
+        starMaterial.color.setHex(0x4f46e5);
+        starMaterial.opacity = 0.12;
+        linkMaterials.forEach((mat) => {
+          mat.color.setHex(0x4f46e5);
+          mat.opacity = 0.12;
+        });
+      }
+    };
+
+    const isDarkTheme = document.documentElement.classList.contains("dark");
+    updateWebGLTheme(isDarkTheme);
+
+    const observer = new MutationObserver(() => {
+      const dark = document.documentElement.classList.contains("dark");
+      updateWebGLTheme(dark);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    // ==================== RAYCAST HOVER ====================
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let hoveredNode: THREE.Mesh | null = null;
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "fixed pointer-events-none bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 shadow-xl opacity-0 transition-opacity duration-200 font-sans z-50";
+    document.body.appendChild(tooltip);
+
+    const handleCanvasMouseMove = (e: MouseEvent) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      
+      tooltip.style.left = `${e.clientX + 15}px`;
+      tooltip.style.top = `${e.clientY + 15}px`;
+    };
+    window.addEventListener("mousemove", handleCanvasMouseMove);
+
     // ==================== ANIMATION LOOP ====================
     let animationId = 0;
     const clock = new THREE.Clock();
@@ -245,12 +353,38 @@ function AnalyzeCandidateSignals(candidateId: string) {
     const tick = () => {
       const elapsedTime = clock.getElapsedTime();
 
-      // Idle Rotation of Constellation Starfield
-      starField.rotation.y = elapsedTime * 0.015;
-      starField.rotation.x = elapsedTime * 0.005;
+      // Idle Rotation of Constellation Starfield & Network Graph
+      starField.rotation.y = elapsedTime * 0.012;
+      starField.rotation.x = elapsedTime * 0.003;
+      
+      networkGroup.rotation.y = elapsedTime * 0.05 + (webglTimeline.scrollTrigger ? webglTimeline.scrollTrigger.progress * Math.PI : 0);
 
-      // Update shader uniform time
-      planetaryMaterial.uniforms.uTime.value = elapsedTime;
+      // Raycast intersections
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodeMeshes);
+
+      if (intersects.length > 0) {
+        const hitNode = intersects[0].object as THREE.Mesh;
+        if (hoveredNode !== hitNode) {
+          if (hoveredNode) {
+            gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale, y: hoveredNode.userData.baseScale, z: hoveredNode.userData.baseScale, duration: 0.15 });
+            (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.4;
+          }
+          hoveredNode = hitNode;
+          gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale * 1.4, y: hoveredNode.userData.baseScale * 1.4, z: hoveredNode.userData.baseScale * 1.4, duration: 0.15 });
+          (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.9;
+          
+          tooltip.textContent = hoveredNode.userData.name;
+          tooltip.style.opacity = "1";
+        }
+      } else {
+        if (hoveredNode) {
+          gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale, y: hoveredNode.userData.baseScale, z: hoveredNode.userData.baseScale, duration: 0.15 });
+          (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.4;
+          hoveredNode = null;
+          tooltip.style.opacity = "0";
+        }
+      }
 
       renderer.render(scene, camera);
       animationId = requestAnimationFrame(tick);
@@ -260,13 +394,20 @@ function AnalyzeCandidateSignals(candidateId: string) {
     // ==================== CLEANUP ====================
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleCanvasMouseMove);
+      if (document.body.contains(tooltip)) {
+        document.body.removeChild(tooltip);
+      }
+      observer.disconnect();
       cancelAnimationFrame(animationId);
       
-      // Memory cleanup
       starGeometry.dispose();
       starMaterial.dispose();
-      sphereGeometry.dispose();
-      planetaryMaterial.dispose();
+      sphereGeo.dispose();
+      nodeMeshes.forEach((mesh) => {
+        (mesh.material as THREE.Material).dispose();
+      });
+      linkMaterials.forEach((mat) => mat.dispose());
       renderer.dispose();
     };
   }, []);
@@ -448,6 +589,13 @@ function AnalyzeCandidateSignals(candidateId: string) {
           >
             <span className="bracket inline-block transition-transform duration-200 font-bold">[</span>D<span className="bracket inline-block transition-transform duration-200 font-bold">]</span> DOCS
           </a>
+          <button 
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg bg-white/40 border border-slate-200/30 hover:bg-white/60 dark:bg-slate-800/40 dark:border-slate-700/30 dark:hover:bg-slate-800/60 text-slate-500 dark:text-slate-400 transition cursor-pointer shadow-sm"
+            aria-label="Toggle theme"
+          >
+            {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
           <button 
             onClick={onEnterApp}
             onMouseEnter={handleLinkEnter} 
