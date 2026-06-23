@@ -1,7 +1,7 @@
 import pytest
 
-from evaluation.metrics import MetricCalculator
 from evaluation.harness import EvaluationHarness
+from evaluation.metrics import MetricCalculator
 from parsers.models import ParsedJob, ParsedResume
 
 

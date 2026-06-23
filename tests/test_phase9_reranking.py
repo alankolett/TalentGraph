@@ -1,6 +1,5 @@
 import pytest
 
-from reranking.models import RerankedCandidate
 from reranking.reranker import CrossEncoderReranker, ScoreBlender
 
 

@@ -204,3 +204,102 @@ class DataCleaner:
             except Exception:
                 pass
         return {"raw": clean_text(value)}
+
+
+def flatten_candidate(record: dict[str, Any]) -> dict[str, Any]:
+    """Flatten hierarchical candidate record into a flat dictionary suitable for pandas/parquet."""
+    import json
+
+    profile = record.get("profile", {})
+    career_history = record.get("career_history", [])
+    education = record.get("education", [])
+    skills = record.get("skills", [])
+    signals = record.get("redrob_signals", {})
+
+    # Reconstruct raw resume text
+    summary = profile.get("summary", "")
+    headline = profile.get("headline", "")
+    career_desc = " ".join(
+        [
+            f"{c.get('title', '')} at {c.get('company', '')}: {c.get('description', '')}"
+            for c in career_history
+        ]
+    )
+    edu_desc = " ".join(
+        [
+            f"{e.get('degree', '')} in {e.get('field_of_study', '')} from {e.get('institution', '')}"
+            for e in education
+        ]
+    )
+    skills_desc = "Skills: " + ", ".join([s.get("name", "") for s in skills])
+    raw_resume_text = (
+        f"{headline}\n\nSummary: {summary}\n\n"
+        f"Experience:\n{career_desc}\n\n"
+        f"Education:\n{edu_desc}\n\n{skills_desc}"
+    )
+
+    # Calculate total career months
+    total_career_months = sum([c.get("duration_months", 0) for c in career_history])
+
+    # Calculate number of employers
+    num_employers = len(
+        set(
+            [
+                c.get("company", "").strip().lower()
+                for c in career_history
+                if c.get("company")
+            ]
+        )
+    )
+
+    # Check if current role is AI relevant
+    current_role_ai_relevant = False
+    ai_keywords = {
+        "ai",
+        "ml",
+        "machine learning",
+        "deep learning",
+        "nlp",
+        "llm",
+        "natural language",
+        "computer vision",
+        "data scientist",
+        "data science",
+        "retrieval",
+        "search",
+        "ranking",
+    }
+
+    current_roles = [c for c in career_history if c.get("is_current")]
+    if not current_roles and career_history:
+        current_roles = [career_history[0]]
+
+    for role in current_roles:
+        title_lower = role.get("title", "").lower()
+        desc_lower = role.get("description", "").lower()
+        if any(kw in title_lower or kw in desc_lower for kw in ai_keywords):
+            current_role_ai_relevant = True
+            break
+
+    # Flattened dict compatible with CandidateRecord
+    flat = {
+        "id": record["candidate_id"],
+        "raw_resume_text": raw_resume_text,
+        "skills_raw": [s.get("name") for s in skills if s.get("name")],
+        "experience_years": float(profile.get("years_of_experience", 0.0)),
+        "education": json.dumps(education),
+        "location": profile.get("location"),
+        "github_url": None,
+        "activity_metadata": json.dumps(signals),
+        # Engineered scalars
+        "total_career_months": total_career_months,
+        "num_employers": num_employers,
+        "current_role_ai_relevant": current_role_ai_relevant,
+        # Preserve raw fields for downstream usage
+        "profile": json.dumps(profile),
+        "career_history": json.dumps(career_history),
+        "skills": json.dumps(skills),
+        "redrob_signals": json.dumps(signals),
+    }
+
+    return flat

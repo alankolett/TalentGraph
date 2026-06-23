@@ -5,10 +5,14 @@ from typing import Any
 
 import pandas as pd
 
-from preprocessing.cleaning import DataCleaner
+from preprocessing.cleaning import DataCleaner, flatten_candidate
 from preprocessing.loading import DataLoader
 from preprocessing.models import RejectedRecord
-from preprocessing.validation import SchemaValidator
+from preprocessing.validation import (
+    JDStructurer,
+    SchemaValidator,
+    validate_against_schema,
+)
 
 
 @dataclass
@@ -38,50 +42,127 @@ class Phase2Pipeline:
         processed_dir.mkdir(parents=True, exist_ok=True)
 
         candidates_source = self.loader.find_dataset_file(raw_dir, "candidates")
-        jobs_source = self.loader.find_dataset_file(raw_dir, "jobs")
+        is_jsonl = candidates_source.suffix.lower() in {".jsonl", ".ndjson"}
 
-        raw_candidates = self.loader.load_raw_dataset(candidates_source)
-        raw_jobs = self.loader.load_raw_dataset(jobs_source)
+        jd_docx_path = raw_dir / "job_description.docx"
+        has_jd_docx = jd_docx_path.exists()
 
-        cleaned_candidates = self.cleaner.clean_candidates(raw_candidates)
-        cleaned_jobs = self.cleaner.clean_jobs(raw_jobs)
+        if is_jsonl:
+            valid_candidates = []
+            rejected_records = []
 
-        deduped_candidates, duplicate_candidates = self.cleaner.deduplicate_candidates(
-            cleaned_candidates
-        )
-        deduped_jobs, duplicate_jobs = self.cleaner.deduplicate_jobs(cleaned_jobs)
+            # Helper to stream JSONL
+            def stream_jsonl(path: Path):
+                with open(path, "r", encoding="utf-8") as f:
+                    for idx, line in enumerate(f):
+                        if line.strip():
+                            yield idx, json.loads(line)
 
-        valid_candidates, rejected_candidates = self.validator.validate_candidates(
-            deduped_candidates, str(candidates_source)
-        )
-        valid_jobs, rejected_jobs = self.validator.validate_jobs(deduped_jobs, str(jobs_source))
+            for idx, record in stream_jsonl(candidates_source):
+                is_valid, reason = validate_against_schema(record)
+                if is_valid:
+                    flat = flatten_candidate(record)
+                    valid_candidates.append(flat)
+                else:
+                    rejected_records.append(
+                        RejectedRecord(
+                            source=str(candidates_source),
+                            row_index=idx,
+                            record_type="candidate",
+                            record_id=str(record.get("candidate_id", "")),
+                            reason=reason or "schema_validation_failed",
+                            payload=record,
+                        ).model_dump(mode="json")
+                    )
 
-        rejected = pd.concat(
-            [
-                self._dedupe_rejections(duplicate_candidates, "candidate", str(candidates_source)),
-                self._dedupe_rejections(duplicate_jobs, "job", str(jobs_source)),
-                rejected_candidates,
-                rejected_jobs,
-            ],
-            ignore_index=True,
-        )
+            # Structure the job description from docx or fall back
+            valid_jobs = []
+            if has_jd_docx:
+                structurer = JDStructurer()
+                job = structurer.structure_jd(jd_docx_path)
 
-        candidates_path = processed_dir / "candidates.parquet"
-        jobs_path = processed_dir / "jobs.parquet"
-        rejected_path = processed_dir / "rejected.parquet"
+                # Write individual job json to data/processed/job_redrob_senior_ai_engineer.json
+                job_json_path = processed_dir / "job_redrob_senior_ai_engineer.json"
+                with open(job_json_path, "w", encoding="utf-8") as jf:
+                    json.dump(job.model_dump(mode="json"), jf, indent=2, sort_keys=True)
 
-        self._parquet_ready(valid_candidates).to_parquet(candidates_path, index=False)
-        valid_jobs.to_parquet(jobs_path, index=False)
-        self._parquet_ready(rejected).to_parquet(rejected_path, index=False)
+                valid_jobs.append(job.model_dump(mode="json"))
+            else:
+                jobs_source = self.loader.find_dataset_file(raw_dir, "jobs")
+                raw_jobs = self.loader.load_raw_dataset(jobs_source)
+                cleaned_jobs = self.cleaner.clean_jobs(raw_jobs)
+                deduped_jobs, _ = self.cleaner.deduplicate_jobs(cleaned_jobs)
+                valid_jobs_df, _ = self.validator.validate_jobs(deduped_jobs, str(jobs_source))
+                valid_jobs = valid_jobs_df.to_dict(orient="records")
 
-        return PipelineResult(
-            candidates_path=candidates_path,
-            jobs_path=jobs_path,
-            rejected_path=rejected_path,
-            candidate_count=len(valid_candidates),
-            job_count=len(valid_jobs),
-            rejected_count=len(rejected),
-        )
+            valid_candidates_df = pd.DataFrame(valid_candidates)
+            rejected_df = pd.DataFrame(rejected_records)
+            valid_jobs_df = pd.DataFrame(valid_jobs)
+
+            candidates_path = processed_dir / "candidates.parquet"
+            jobs_path = processed_dir / "jobs.parquet"
+            rejected_path = processed_dir / "rejected.parquet"
+
+            self._parquet_ready(valid_candidates_df).to_parquet(candidates_path, index=False)
+            valid_jobs_df.to_parquet(jobs_path, index=False)
+            self._parquet_ready(rejected_df).to_parquet(rejected_path, index=False)
+
+            return PipelineResult(
+                candidates_path=candidates_path,
+                jobs_path=jobs_path,
+                rejected_path=rejected_path,
+                candidate_count=len(valid_candidates_df),
+                job_count=len(valid_jobs_df),
+                rejected_count=len(rejected_df),
+            )
+        else:
+            # Fallback for the original backward compatibility test suite
+            jobs_source = self.loader.find_dataset_file(raw_dir, "jobs")
+
+            raw_candidates = self.loader.load_raw_dataset(candidates_source)
+            raw_jobs = self.loader.load_raw_dataset(jobs_source)
+
+            cleaned_candidates = self.cleaner.clean_candidates(raw_candidates)
+            cleaned_jobs = self.cleaner.clean_jobs(raw_jobs)
+
+            deduped_candidates, duplicate_candidates = self.cleaner.deduplicate_candidates(
+                cleaned_candidates
+            )
+            deduped_jobs, duplicate_jobs = self.cleaner.deduplicate_jobs(cleaned_jobs)
+
+            valid_candidates, rejected_candidates = self.validator.validate_candidates(
+                deduped_candidates, str(candidates_source)
+            )
+            valid_jobs, rejected_jobs = self.validator.validate_jobs(deduped_jobs, str(jobs_source))
+
+            rejected = pd.concat(
+                [
+                    self._dedupe_rejections(
+                        duplicate_candidates, "candidate", str(candidates_source)
+                    ),
+                    self._dedupe_rejections(duplicate_jobs, "job", str(jobs_source)),
+                    rejected_candidates,
+                    rejected_jobs,
+                ],
+                ignore_index=True,
+            )
+
+            candidates_path = processed_dir / "candidates.parquet"
+            jobs_path = processed_dir / "jobs.parquet"
+            rejected_path = processed_dir / "rejected.parquet"
+
+            self._parquet_ready(valid_candidates).to_parquet(candidates_path, index=False)
+            valid_jobs.to_parquet(jobs_path, index=False)
+            self._parquet_ready(rejected).to_parquet(rejected_path, index=False)
+
+            return PipelineResult(
+                candidates_path=candidates_path,
+                jobs_path=jobs_path,
+                rejected_path=rejected_path,
+                candidate_count=len(valid_candidates),
+                job_count=len(valid_jobs),
+                rejected_count=len(rejected),
+            )
 
     def _dedupe_rejections(self, df: pd.DataFrame, record_type: str, source: str) -> pd.DataFrame:
         rows = []

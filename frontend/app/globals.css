@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@fontsource/geist-sans";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -8,31 +10,55 @@
   --font-sans: "Geist Sans", sans-serif;
   --font-heading: "General Sans", sans-serif;
 
-  --color-bg-crystalline: var(--bg-crystalline);
-  --color-bg-satin-glass: var(--bg-satin-glass);
+  --color-page-bg: var(--bg-crystalline);
+  --color-panel-bg: var(--bg-satin-glass);
   --color-accent-indigo: #4F46E5;
   --color-accent-emerald: #10B981;
-  --color-text-slate-900: var(--text-slate-900);
-  --color-text-slate-500: var(--text-slate-500);
+  --color-primary-text: var(--text-slate-900);
+  --color-secondary-text: var(--text-slate-500);
   --shadow-luxe: var(--shadow-luxe);
   --color-border-glass: var(--border-glass);
-  --color-bg-inner-panel: var(--bg-inner-panel-val);
-  --color-bg-input: var(--bg-input-val);
+  --color-inner-panel: var(--bg-inner-panel-val);
+  --color-input-bg: var(--bg-input-val);
+
+  --animate-pan-grid: pan-grid 3s linear infinite;
+  --animate-pulse-radial: pulse-radial 8s ease-in-out infinite;
 }
+
+@keyframes pan-grid {
+  from { background-position: 0 0; }
+  to { background-position: 24px 24px; }
+}
+
+@keyframes pulse-radial {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Global Transition for Theme Switching */
+html, body {
+  background-color: var(--bg-crystalline);
+  color: var(--text-slate-900);
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 
 :root {
   --background: 210 20% 98%;
   --foreground: 222 47% 11%;
   --hero-sub: 215 16% 47%;
 
-  --bg-crystalline: #F8FAFC;
-  --bg-satin-glass: rgba(255, 255, 255, 0.75);
+  --bg-crystalline: #FAFAFA;
+  --bg-satin-glass: #FFFFFF;
   --text-slate-900: #0F172A;
   --text-slate-500: #64748B;
   --border-glass: rgba(15, 23, 42, 0.08);
-  --shadow-luxe: 0 20px 50px -12px rgba(15, 23, 42, 0.04);
+  --shadow-luxe: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   --bg-inner-panel-val: #F1F5F9;
   --bg-input-val: #FFFFFF;
+  
+  --theme-transition: all 0.3s cubic-bezier(0, 0, 0.2, 1);
 }
 
 .dark {
@@ -40,28 +66,31 @@
   --foreground: 210 20% 98%;
   --hero-sub: 215 16% 70%;
 
-  --bg-crystalline: #0B0F19;
-  --bg-satin-glass: rgba(17, 24, 39, 0.75);
+  --bg-crystalline: #05050A;
+  --bg-satin-glass: rgba(15, 23, 42, 0.4);
   --text-slate-900: #F8FAFC;
   --text-slate-500: #94A3B8;
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --shadow-luxe: 0 20px 50px -12px rgba(0, 0, 0, 0.4);
-  --bg-inner-panel-val: #1E293B;
-  --bg-input-val: #0F172A;
+  --border-glass: rgba(99, 102, 241, 0.15);
+  --shadow-luxe: 0 0 15px 0 rgba(79, 70, 229, 0.1);
+  --bg-inner-panel-val: #0F172A;
+  --bg-input-val: #0B0F19;
+  
+  --theme-transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  transition: background-color var(--theme-transition), border-color var(--theme-transition), box-shadow var(--theme-transition);
 }
 
 html {
   background-color: var(--bg-crystalline);
-  transition: background-color 0.3s ease;
 }
 
 body {
   background-color: transparent;
   color: var(--text-slate-900);
   font-family: var(--font-sans);
-  transition: color 0.3s ease;
 }
-
 .bento-glass-card {
   background: var(--bg-satin-glass);
   backdrop-filter: blur(24px) saturate(160%);
@@ -228,3 +257,4 @@ select option {
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out both;
 }
+

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import NeuralBackground from "./NeuralBackground";
 import Lenis from "@studio-freight/lenis";
 import { gsap } from "gsap";
+import { motion, AnimatePresence } from "framer-motion";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import * as THREE from "three";
 import { 
   Terminal, 
   Sparkles, 
@@ -22,6 +23,357 @@ import {
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
+
+
+// ==================== LIVE RANKING STACK COMPONENT ====================
+const initialCandidates = [
+  { id: 'cand-1', name: 'Elena Rostova', role: 'Senior Python Dev', score: 20, maxScore: 98, color: 'bg-indigo-500' },
+  { id: 'cand-2', name: 'Marcus Vance', role: 'Lead Architect', score: 20, maxScore: 94, color: 'bg-violet-500' },
+  { id: 'cand-3', name: 'Siddharth Nair', role: 'Backend Engineer', score: 20, maxScore: 89, color: 'bg-blue-500' },
+  { id: 'cand-4', name: 'Structured Profile', role: 'Fullstack', score: 20, maxScore: 75, color: 'bg-emerald-500' }
+];
+
+const LiveRankingStack = () => {
+  const [candidates, setCandidates] = useState(initialCandidates);
+
+  useEffect(() => {
+    let tick = 0;
+    const interval = setInterval(() => {
+      tick++;
+      setCandidates(prev => {
+        let updated = prev.map(c => {
+          // Slowly increase score until maxScore
+          if (c.score < c.maxScore) {
+            return { ...c, score: Math.min(c.maxScore, c.score + Math.floor(Math.random() * 15) + 5) };
+          }
+          return c;
+        });
+        
+        // Only sort if we have reached a certain tick to let bars fill first, then re-sort
+        if (tick > 3) {
+           updated = updated.sort((a, b) => b.score - a.score);
+        }
+        
+        // Reset loop after a while
+        if (tick > 15) {
+          tick = 0;
+          return initialCandidates;
+        }
+        
+        return updated;
+      });
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="w-full max-w-md mx-auto space-y-3 relative perspective-1000">
+      <div className="absolute -inset-4 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-3xl blur-xl -z-10" />
+      <AnimatePresence>
+        {candidates.map((cand, i) => (
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            key={cand.id}
+            className="flex items-center gap-4 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm relative overflow-hidden"
+          >
+            {/* Background fill bar */}
+            <motion.div 
+              className={`absolute top-0 left-0 h-full opacity-10 dark:opacity-20 ${cand.color}`}
+              initial={{ width: '20%' }}
+              animate={{ width: `${cand.score}%` }}
+              transition={{ ease: "easeOut", duration: 0.5 }}
+            />
+            
+            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 z-10">
+              {cand.name.charAt(0)}
+            </div>
+            <div className="flex-1 z-10">
+              <div className="text-sm font-bold text-slate-900 dark:text-white flex justify-between">
+                <span>{cand.name}</span>
+                <span className="font-mono text-indigo-600 dark:text-indigo-400">{cand.score}%</span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                {cand.role}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+
+// ==================== FEATURE SCROLL RAIL COMPONENT ====================
+const features = [
+  {
+    title: "Knowledge Graph",
+    icon: <Database className="w-6 h-6 text-indigo-500" />,
+    text: "Calculates synoymic skill node distances dynamically.",
+    animation: (
+      <div className="w-full h-24 bg-slate-100 dark:bg-slate-800/50 rounded-lg mt-4 flex items-center justify-center relative overflow-hidden">
+        <motion.div
+          className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] text-white font-bold absolute"
+          animate={{ x: [-40, -10, -40] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          JS
+        </motion.div>
+        <motion.div
+          className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-[10px] text-white font-bold absolute"
+          animate={{ x: [40, 10, 40] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          TS
+        </motion.div>
+        <motion.div
+          className="absolute h-[2px] bg-indigo-300 dark:bg-indigo-700 z-[-1]"
+          animate={{ width: [0, 40, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+    )
+  },
+  {
+    title: "Hybrid Retrieval",
+    icon: <Activity className="w-6 h-6 text-emerald-500" />,
+    text: "Merges BM25 lexical frequency with Qdrant vector scores.",
+    animation: (
+      <div className="w-full h-24 bg-slate-100 dark:bg-slate-800/50 rounded-lg mt-4 flex flex-col items-center justify-center gap-2 px-6">
+        <div className="w-full flex justify-between gap-4">
+          <motion.div className="h-2 bg-slate-300 dark:bg-slate-600 rounded-full flex-1" animate={{ scaleX: [0.3, 1, 0.3], originX: 0 }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
+          <motion.div className="h-2 bg-emerald-400 rounded-full flex-1" animate={{ scaleX: [1, 0.3, 1], originX: 1 }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
+        </div>
+        <motion.div className="h-2 bg-gradient-to-r from-slate-400 to-emerald-500 rounded-full w-full" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
+      </div>
+    )
+  },
+  {
+    title: "Behavioral Signals",
+    icon: <Zap className="w-6 h-6 text-amber-500" />,
+    text: "Telemetry indexing candidates OSS commits and velocities.",
+    animation: (
+      <div className="w-full h-24 bg-slate-100 dark:bg-slate-800/50 rounded-lg mt-4 flex items-end justify-center gap-1 p-4">
+        {[0.2, 0.5, 0.3, 0.8, 0.4, 0.9, 0.6].map((h, i) => (
+          <motion.div 
+            key={i} 
+            className="w-4 bg-amber-400 rounded-t-sm"
+            initial={{ height: '10%' }}
+            animate={{ height: `${h * 100}%` }}
+            transition={{ duration: 1, repeat: Infinity, repeatType: "mirror", delay: i * 0.1 }}
+          />
+        ))}
+      </div>
+    )
+  },
+  {
+    title: "Explainability Matrix",
+    icon: <Sparkles className="w-6 h-6 text-purple-500" />,
+    text: "Generates narratives detailing exactly why profiles align.",
+    animation: (
+      <div className="w-full h-24 bg-slate-100 dark:bg-slate-800/50 rounded-lg mt-4 flex flex-col items-start justify-center gap-2 p-4">
+        <motion.div className="h-2 bg-purple-400 rounded-full w-3/4" animate={{ opacity: [0, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", repeatDelay: 2 }} />
+        <motion.div className="h-2 bg-slate-300 dark:bg-slate-600 rounded-full w-full" animate={{ opacity: [0, 1] }} transition={{ duration: 0.5, delay: 0.2, repeat: Infinity, repeatType: "reverse", repeatDelay: 2 }} />
+        <motion.div className="h-2 bg-slate-300 dark:bg-slate-600 rounded-full w-5/6" animate={{ opacity: [0, 1] }} transition={{ duration: 0.5, delay: 0.4, repeat: Infinity, repeatType: "reverse", repeatDelay: 2 }} />
+      </div>
+    )
+  }
+];
+
+const FeatureScrollRail = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // Use layout effect for accurate GSAP calculations
+  React.useLayoutEffect(() => {
+    if (!containerRef.current || !trackRef.current) return;
+    const track = trackRef.current;
+    
+    let ctx = gsap.context(() => {
+      let mm = gsap.matchMedia();
+
+      // Desktop + Motion preferred: Horizontal Pin
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 20%",
+            end: () => `+=${track.scrollWidth - window.innerWidth}`,
+            pin: true,
+            scrub: 1,
+            invalidateOnRefresh: true,
+          }
+        });
+
+        tl.to(track, {
+          x: () => -(track.scrollWidth - window.innerWidth + 100),
+          ease: "none"
+        });
+      });
+
+      // Mobile or Reduced Motion: Vertical Fade Stack
+      mm.add("(max-width: 767px), (prefers-reduced-motion: reduce)", () => {
+        // Reset track position if it was moved
+        gsap.set(track, { clearProps: "all" });
+        
+        const cards = track.querySelectorAll('.bento-glass-card');
+        cards.forEach(card => {
+          gsap.fromTo(card, 
+            { opacity: 0, y: 30 },
+            { 
+              opacity: 1, 
+              y: 0, 
+              scrollTrigger: {
+                trigger: card,
+                start: "top 80%",
+              }
+            }
+          );
+        });
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={containerRef} className="py-20 w-full">
+      <div className="px-8 md:px-12 mb-10 text-center md:text-left">
+        <h3 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white mb-4">
+          Core Vector Subsystems
+        </h3>
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl">
+          Four low-latency ranking components running concurrently over sqlite and vector databases.
+        </p>
+      </div>
+
+      <div ref={trackRef} className="flex flex-col md:flex-row md:flex-nowrap gap-8 px-8 md:px-12 w-full md:w-max">
+        {features.map((card, i) => (
+          <div 
+            key={i} 
+            className="w-full md:w-[450px] shrink-0 bento-glass-card p-8 flex flex-col justify-between hover:border-indigo-500/30 transition-all duration-300 bg-white/60 dark:bg-slate-900/60"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shadow-sm mb-6">
+                {card.icon}
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white font-heading mb-2">{card.title}</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{card.text}</p>
+            </div>
+            {card.animation}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+
+// ==================== SCROLL-TRIGGERED CODE REVEAL ====================
+const CodeRevealBlock = () => {
+  const codeLines = [
+    { text: "import { rankCandidate, cosineDistance } from 'talentgraph/core';", tokens: [{ text: "import", class: "text-indigo-400" }, { text: " { rankCandidate, cosineDistance } ", class: "text-slate-300" }, { text: "from", class: "text-indigo-400" }, { text: " 'talentgraph/core';", class: "text-emerald-400" }] },
+    { text: "function AnalyzeCandidateSignals(id) {", tokens: [{ text: "function", class: "text-indigo-400" }, { text: " AnalyzeCandidateSignals", class: "text-amber-300" }, { text: "(id) {", class: "text-slate-300" }] },
+    { text: "  // Compute semantic vector weights", tokens: [{ text: "  // Compute semantic vector weights", class: "text-slate-500" }] },
+    { text: "  const dist = cosineDistance(cand, job);", tokens: [{ text: "  const", class: "text-indigo-400" }, { text: " dist = ", class: "text-slate-300" }, { text: "cosineDistance", class: "text-amber-300" }, { text: "(cand, job);", class: "text-slate-300" }] },
+    { text: "  return rankCandidate(id, dist, 0.5);", tokens: [{ text: "  return", class: "text-indigo-400" }, { text: " ", class: "text-slate-300" }, { text: "rankCandidate", class: "text-amber-300" }, { text: "(id, dist, ", class: "text-slate-300" }, { text: "0.5", class: "text-emerald-500" }, { text: ");", class: "text-slate-300" }] },
+    { text: "}", tokens: [{ text: "}", class: "text-slate-300" }] }
+  ];
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const lines = containerRef.current.querySelectorAll('.code-line');
+    
+    let ctx = gsap.context(() => {
+      let mm = gsap.matchMedia();
+      
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.set(lines, { opacity: 0, x: -10 });
+        gsap.to(lines, {
+          opacity: 1,
+          x: 0,
+          stagger: 0.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 70%",
+            end: "top 30%",
+            scrub: 1
+          }
+        });
+      });
+      
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        gsap.set(lines, { opacity: 1, x: 0 });
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <pre ref={containerRef} className="text-slate-400 select-none overflow-x-auto text-[10px] md:text-[11px] leading-loose">
+      <code>
+        {codeLines.map((line, i) => (
+          <div key={i} className="code-line min-h-[1.5em]">
+            {line.tokens.map((token, j) => (
+              <span key={j} className={token.class}>{token.text}</span>
+            ))}
+          </div>
+        ))}
+      </code>
+    </pre>
+  );
+};
+
+
+// ==================== STAT COUNTERS ====================
+const StatCounter = ({ endValue, label, suffix = "" }: { endValue: number, label: string, suffix?: string }) => {
+  const nodeRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!nodeRef.current) return;
+    
+    gsap.fromTo(nodeRef.current, 
+      { innerText: 0 }, 
+      { 
+        innerText: endValue, 
+        duration: 2, 
+        ease: "power2.out",
+        snap: { innerText: 1 },
+        scrollTrigger: {
+          trigger: nodeRef.current,
+          start: "top 90%",
+        },
+        onUpdate: function() {
+          if (nodeRef.current) {
+            nodeRef.current.innerText = Math.ceil(Number(this.targets()[0].innerText)) + suffix;
+          }
+        }
+      }
+    );
+  }, [endValue, suffix]);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-6 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm">
+      <div ref={nodeRef} className="text-4xl md:text-5xl font-black text-indigo-600 dark:text-indigo-400 font-heading mb-2">0</div>
+      <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</div>
+    </div>
+  );
+};
+
+const StatRow = () => (
+  <section className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 py-12 px-6">
+    <StatCounter endValue={142} label="Active Job Roles" />
+    <StatCounter endValue={85} suffix="k+" label="Catalog Candidates" />
+    <StatCounter endValue={12} suffix="ms" label="Avg Query Latency" />
+  </section>
+);
 
 interface RemixLandingPageProps {
   onEnterApp: () => void;
@@ -88,13 +440,6 @@ function AnalyzeCandidateSignals(candidateId: string) {
       infinite: false,
     });
 
-    let rafId: number;
-    function updateScroll(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(updateScroll);
-    }
-    rafId = requestAnimationFrame(updateScroll);
-
     lenis.on("scroll", ScrollTrigger.update);
 
     const tickerUpdate = (time: number) => {
@@ -104,311 +449,8 @@ function AnalyzeCandidateSignals(candidateId: string) {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
-      cancelAnimationFrame(rafId);
       lenis.destroy();
       gsap.ticker.remove(tickerUpdate);
-    };
-  }, []);
-
-  // ==================== THREE.JS WEBGL BACKGROUND ====================
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    // Scene & Camera
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 5);
-
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
-    dirLight.position.set(5, 5, 5);
-    scene.add(dirLight);
-
-    // 1. Constellation Starfield System
-    const starCount = 1500;
-    const starGeometry = new THREE.BufferGeometry();
-    const starPositions = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount * 3; i++) {
-      starPositions[i] = (Math.random() - 0.5) * 22;
-    }
-    starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0x4f46e5,
-      size: 0.05,
-      transparent: true,
-      opacity: 0.12,
-      sizeAttenuation: true,
-    });
-    const starField = new THREE.Points(starGeometry, starMaterial);
-    scene.add(starField);
-
-    // 2. The 3D Floating Talent Network Graph
-    const networkGroup = new THREE.Group();
-    scene.add(networkGroup);
-
-    // Nodes data
-    const nodesData = [
-      // Jobs (Center/core)
-      { id: "job-backend", name: "Job: Senior Backend Engineer", type: "job", size: 0.26, color: "#4F46E5", pos: new THREE.Vector3(0, 0, 0) },
-      { id: "job-mlops", name: "Job: Lead MLOps Platform Architect", type: "job", size: 0.26, color: "#10B981", pos: new THREE.Vector3(1.6, 0.9, -0.6) },
-      { id: "job-frontend", name: "Job: Senior React Developer", type: "job", size: 0.26, color: "#8B5CF6", pos: new THREE.Vector3(-1.6, -0.9, 0.6) },
-      
-      // Candidates
-      { id: "cand-elena", name: "Elena Rostova (Match: 98.4%)", type: "candidate", size: 0.18, color: "#6366F1", pos: new THREE.Vector3(0.8, -1.1, 0.7) },
-      { id: "cand-marcus", name: "Marcus Vance (Match: 94.1%)", type: "candidate", size: 0.18, color: "#8B5CF6", pos: new THREE.Vector3(2.4, 0.2, -0.9) },
-      { id: "cand-siddharth", name: "Siddharth Nair (Match: 89.7%)", type: "candidate", size: 0.18, color: "#EF4444", pos: new THREE.Vector3(-0.6, 1.3, -0.5) },
-      { id: "cand-octocat", name: "Structured Sandbox Profile", type: "candidate", size: 0.16, color: "#3B82F6", pos: new THREE.Vector3(-2.4, -0.2, 0.9) },
-
-      // Skills (Branching out)
-      { id: "skill-python", name: "Skill: Python", type: "skill", size: 0.08, color: "#10B981", pos: new THREE.Vector3(1.7, -1.8, 0.3) },
-      { id: "skill-fastapi", name: "Skill: FastAPI", type: "skill", size: 0.08, color: "#4F46E5", pos: new THREE.Vector3(0.3, -2.1, 0.9) },
-      { id: "skill-qdrant", name: "Skill: Qdrant", type: "skill", size: 0.08, color: "#EF4444", pos: new THREE.Vector3(1.0, -0.5, 1.7) },
-      { id: "skill-pytorch", name: "Skill: PyTorch", type: "skill", size: 0.08, color: "#EC4899", pos: new THREE.Vector3(3.2, 0.8, -1.3) },
-      { id: "skill-transformers", name: "Skill: Transformers", type: "skill", size: 0.08, color: "#8B5CF6", pos: new THREE.Vector3(2.9, -0.6, -0.4) },
-      { id: "skill-react", name: "Skill: React", type: "skill", size: 0.08, color: "#06B6D4", pos: new THREE.Vector3(-1.9, -1.9, 1.3) },
-      { id: "skill-typescript", name: "Skill: TypeScript", type: "skill", size: 0.08, color: "#3B82F6", pos: new THREE.Vector3(-2.9, -1.1, 0.3) }
-    ];
-
-    // Links data
-    const linksData = [
-      { from: "job-backend", to: "cand-elena" },
-      { from: "job-mlops", to: "cand-marcus" },
-      { from: "job-backend", to: "cand-siddharth" },
-      { from: "job-frontend", to: "cand-octocat" },
-      
-      { from: "cand-elena", to: "skill-python" },
-      { from: "cand-elena", to: "skill-fastapi" },
-      { from: "cand-elena", to: "skill-qdrant" },
-      
-      { from: "cand-marcus", to: "skill-python" },
-      { from: "cand-marcus", to: "skill-pytorch" },
-      { from: "cand-marcus", to: "skill-transformers" },
-      
-      { from: "cand-siddharth", to: "skill-python" },
-      { from: "cand-siddharth", to: "skill-fastapi" },
-      
-      { from: "cand-octocat", to: "skill-react" },
-      { from: "cand-octocat", to: "skill-typescript" }
-    ];
-
-    const nodeMeshes: THREE.Mesh[] = [];
-    const sphereGeo = new THREE.SphereGeometry(1, 16, 16);
-
-    nodesData.forEach((node) => {
-      const nodeMat = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(node.color),
-        emissive: new THREE.Color(node.color),
-        emissiveIntensity: 0.4,
-        shininess: 90,
-        transparent: true,
-        opacity: 0.9
-      });
-      
-      const mesh = new THREE.Mesh(sphereGeo, nodeMat);
-      mesh.scale.setScalar(node.size);
-      mesh.position.copy(node.pos);
-      mesh.userData = { id: node.id, name: node.name, type: node.type, baseScale: node.size, baseColor: node.color };
-      networkGroup.add(mesh);
-      nodeMeshes.push(mesh);
-    });
-
-    const linkLines: THREE.Line[] = [];
-    const linkMaterials: THREE.LineBasicMaterial[] = [];
-
-    linksData.forEach((link) => {
-      const fromNode = nodesData.find((n) => n.id === link.from);
-      const toNode = nodesData.find((n) => n.id === link.to);
-      if (!fromNode || !toNode) return;
-
-      const points = [fromNode.pos, toNode.pos];
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-      
-      const lineMat = new THREE.LineBasicMaterial({
-        color: 0x4f46e5,
-        transparent: true,
-        opacity: 0.12,
-        linewidth: 1
-      });
-      
-      const line = new THREE.Line(lineGeo, lineMat);
-      networkGroup.add(line);
-      linkLines.push(line);
-      linkMaterials.push(lineMat);
-    });
-
-    // Set initial network position
-    networkGroup.position.set(1.4, -0.6, 0.0);
-
-    // ==================== GSAP SCROLL RIGGING ====================
-    const webglTimeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: "body",
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        invalidateOnRefresh: true,
-      }
-    });
-
-    webglTimeline.to(camera.position, {
-      y: -3.6,
-      x: -0.1,
-      z: 4.2,
-      ease: "none",
-    }, 0);
-
-    webglTimeline.to(camera.rotation, {
-      x: THREE.MathUtils.degToRad(8),
-      y: THREE.MathUtils.degToRad(-12),
-      ease: "none",
-    }, 0);
-
-    webglTimeline.to(networkGroup.position, {
-      x: -0.6,
-      y: -1.9,
-      z: 1.6,
-      ease: "none",
-    }, 0);
-
-    webglTimeline.to(networkGroup.rotation, {
-      y: THREE.MathUtils.degToRad(180),
-      x: THREE.MathUtils.degToRad(35),
-      ease: "none",
-    }, 0);
-
-    // ==================== WINDOW RESIZE ====================
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    };
-    window.addEventListener("resize", handleResize);
-
-    // ==================== MUTATION OBSERVER (THEME SYNC) ====================
-    const updateWebGLTheme = (dark: boolean) => {
-      if (dark) {
-        starMaterial.color.setHex(0xffffff);
-        starMaterial.opacity = 0.18;
-        linkMaterials.forEach((mat) => {
-          mat.color.setHex(0x818cf8);
-          mat.opacity = 0.20;
-        });
-      } else {
-        starMaterial.color.setHex(0x4f46e5);
-        starMaterial.opacity = 0.12;
-        linkMaterials.forEach((mat) => {
-          mat.color.setHex(0x4f46e5);
-          mat.opacity = 0.12;
-        });
-      }
-    };
-
-    const isDarkTheme = document.documentElement.classList.contains("dark");
-    updateWebGLTheme(isDarkTheme);
-
-    const observer = new MutationObserver(() => {
-      const dark = document.documentElement.classList.contains("dark");
-      updateWebGLTheme(dark);
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-
-    // ==================== RAYCAST HOVER ====================
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    let hoveredNode: THREE.Mesh | null = null;
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "fixed pointer-events-none bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 shadow-xl opacity-0 transition-opacity duration-200 font-sans z-50";
-    document.body.appendChild(tooltip);
-
-    const handleCanvasMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      
-      tooltip.style.left = `${e.clientX + 15}px`;
-      tooltip.style.top = `${e.clientY + 15}px`;
-    };
-    window.addEventListener("mousemove", handleCanvasMouseMove);
-
-    // ==================== ANIMATION LOOP ====================
-    let animationId = 0;
-    const clock = new THREE.Clock();
-
-    const tick = () => {
-      const elapsedTime = clock.getElapsedTime();
-
-      // Idle Rotation of Constellation Starfield & Network Graph
-      starField.rotation.y = elapsedTime * 0.012;
-      starField.rotation.x = elapsedTime * 0.003;
-      
-      networkGroup.rotation.y = elapsedTime * 0.05 + (webglTimeline.scrollTrigger ? webglTimeline.scrollTrigger.progress * Math.PI : 0);
-
-      // Raycast intersections
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(nodeMeshes);
-
-      if (intersects.length > 0) {
-        const hitNode = intersects[0].object as THREE.Mesh;
-        if (hoveredNode !== hitNode) {
-          if (hoveredNode) {
-            gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale, y: hoveredNode.userData.baseScale, z: hoveredNode.userData.baseScale, duration: 0.15 });
-            (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.4;
-          }
-          hoveredNode = hitNode;
-          gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale * 1.4, y: hoveredNode.userData.baseScale * 1.4, z: hoveredNode.userData.baseScale * 1.4, duration: 0.15 });
-          (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.9;
-          
-          tooltip.textContent = hoveredNode.userData.name;
-          tooltip.style.opacity = "1";
-        }
-      } else {
-        if (hoveredNode) {
-          gsap.to(hoveredNode.scale, { x: hoveredNode.userData.baseScale, y: hoveredNode.userData.baseScale, z: hoveredNode.userData.baseScale, duration: 0.15 });
-          (hoveredNode.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.4;
-          hoveredNode = null;
-          tooltip.style.opacity = "0";
-        }
-      }
-
-      renderer.render(scene, camera);
-      animationId = requestAnimationFrame(tick);
-    };
-    tick();
-
-    // ==================== CLEANUP ====================
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousemove", handleCanvasMouseMove);
-      if (document.body.contains(tooltip)) {
-        document.body.removeChild(tooltip);
-      }
-      observer.disconnect();
-      cancelAnimationFrame(animationId);
-      
-      starGeometry.dispose();
-      starMaterial.dispose();
-      sphereGeo.dispose();
-      nodeMeshes.forEach((mesh) => {
-        (mesh.material as THREE.Material).dispose();
-      });
-      linkMaterials.forEach((mat) => mat.dispose());
-      renderer.dispose();
     };
   }, []);
 
@@ -551,16 +593,9 @@ function AnalyzeCandidateSignals(candidateId: string) {
   };
 
   return (
-    <div className="relative bg-[#F8FAFC] text-slate-900 font-sans selection:bg-indigo-100 min-h-screen">
-      {/* 3D Viewport Hardware-Accelerated Canvas */}
-      <canvas ref={canvasRef} className="webgl-canvas fixed top-0 left-0 w-full h-screen pointer-events-none z-10" />
-
-      {/* BACKGROUND ORGANIC BLURS */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-200/40 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 -right-20 w-[500px] h-[500px] bg-emerald-200/30 rounded-full blur-[140px]" />
-        <div className="absolute -bottom-20 left-1/3 w-80 h-80 bg-cyan-200/30 rounded-full blur-[100px]" />
-      </div>
+    <div className="relative bg-transparent font-sans selection:bg-indigo-100 min-h-screen">
+      {/* NEURAL BACKGROUND */}
+      <NeuralBackground />
 
       {/* SECTION A: FIXED SHORTCUT NAVIGATION */}
       <nav className="fixed top-0 left-0 w-full h-20 flex items-center justify-between px-6 md:px-12 z-50 pointer-events-auto bg-white/40 border-b border-slate-200/30 backdrop-blur-md">
@@ -611,19 +646,41 @@ function AnalyzeCandidateSignals(candidateId: string) {
       <main className="relative z-20 pt-32 px-4 md:px-8 max-w-6xl mx-auto space-y-36 pb-36">
         
         {/* SECTION B: THE DESTINATION HERO CARD */}
-        <section className="min-h-[70vh] flex items-center justify-center">
-          <div className="bento-glass-card p-8 md:p-12 w-full max-w-3xl text-center space-y-6">
+        <section className="min-h-[85vh] flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 pt-10">
+          <div className="flex-1 space-y-6 text-center lg:text-left z-10">
             <span className="text-[11px] font-bold tracking-[0.25em] text-slate-400 uppercase block font-mono">
               {"// Neural Recruiter Suite"}
             </span>
-            <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-[-0.04em] leading-[1.1] font-heading">
-              A Crystalline Graph Matrix For Talent Telemetry
-            </h2>
-            <p className="text-slate-500 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            <div className="hero-wordmark overflow-hidden">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-none font-heading flex flex-nowrap whitespace-nowrap justify-center lg:justify-start">
+                {"TalentGraph".split('').map((char, index) => (
+                  <motion.span 
+                    key={index} 
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ ease: [0.16, 1, 0.3, 1], duration: 1, delay: index * 0.04 }}
+                    className="inline-block"
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </h1>
+            </div>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="text-slate-500 dark:text-slate-400 text-base md:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans"
+            >
               Synthesize resume semantic distances, commit velocities, and cross-functional skill ontologies directly on the GPU canvas.
-            </p>
+            </motion.p>
 
-            <div className="pt-4 flex justify-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="pt-4 flex justify-center lg:justify-start"
+            >
               <button 
                 ref={magneticRef}
                 onClick={onEnterApp}
@@ -632,59 +689,18 @@ function AnalyzeCandidateSignals(candidateId: string) {
                 <span>Launch Recruiter Portal</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-            </div>
+            </motion.div>
+          </div>
+          
+          <div className="flex-1 w-full z-10">
+             <LiveRankingStack />
           </div>
         </section>
+
+        <StatRow />
 
         {/* TALENTGRAPH FEATURE GRID */}
-        <section className="space-y-8">
-          <div className="text-center space-y-2">
-            <h3 className="text-3xl font-black tracking-tight text-slate-900">
-              Core Vector Subsystems
-            </h3>
-            <p className="text-slate-500 text-sm max-w-md mx-auto">
-              Four low-latency ranking components running concurrently over sqlite and vector databases.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Knowledge Graph",
-                icon: <Database className="w-5 h-5 text-indigo-500" />,
-                text: "Calculates synoymic skill node distances dynamically.",
-              },
-              {
-                title: "Hybrid Retrieval",
-                icon: <Activity className="w-5 h-5 text-emerald-500" />,
-                text: "Merges BM25 lexical frequency with Qdrant vector scores.",
-              },
-              {
-                title: "Behavioral Signals",
-                icon: <Zap className="w-5 h-5 text-amber-500" />,
-                text: "Telemetry indexing candidates OSS commits and velocities.",
-              },
-              {
-                title: "Explainability Matrix",
-                icon: <Sparkles className="w-5 h-5 text-purple-500" />,
-                text: "Generates narratives detailing exactly why profiles align.",
-              },
-            ].map((card, i) => (
-              <div 
-                key={i} 
-                className="bento-glass-card p-6 flex flex-col justify-between h-56 hover:border-indigo-500/30 transition-all duration-300 bg-white/50"
-              >
-                <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm">
-                  {card.icon}
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-slate-900 font-heading">{card.title}</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">{card.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <FeatureScrollRail />
 
         {/* SECTION C: INTERACTIVE LIVE-CODE FEATURE CARD */}
         <section>
@@ -706,16 +722,7 @@ function AnalyzeCandidateSignals(candidateId: string) {
                 <span className="text-slate-500 ml-2 text-[10px]">scoring-pipeline.ts</span>
               </div>
               
-              <pre className="text-slate-400 select-none overflow-x-auto text-[10px] md:text-[11px] leading-relaxed">
-                <code>
-                  <span className="text-indigo-400">import</span> {"{ rankCandidate, cosineDistance }"} <span className="text-indigo-400">from</span> <span className="text-emerald-400">&apos;talentgraph/core&apos;</span>;<br />
-                  <span className="text-indigo-400">function</span> <span className="text-amber-300">AnalyzeCandidateSignals</span>(id) {"{"}<br />
-                  &nbsp;&nbsp;<span className="text-slate-500">{"// Compute semantic vector weights"}</span><br />
-                  &nbsp;&nbsp;<span className="text-indigo-400">const</span> dist = <span className="text-amber-300">cosineDistance</span>(cand, job);<br />
-                  &nbsp;&nbsp;<span className="text-indigo-400">return</span> <span className="text-amber-300">rankCandidate</span>(id, dist, <span className="text-emerald-500">0.5</span>);<br />
-                  {"}"}
-                </code>
-              </pre>
+              <CodeRevealBlock />
 
               <div className="flex justify-end pt-4">
                 <button 

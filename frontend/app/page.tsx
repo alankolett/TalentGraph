@@ -1,4 +1,5 @@
 "use client";
+import NeuralBackground from './components/NeuralBackground';
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
@@ -76,165 +77,7 @@ interface RankingResult {
 }
 
 // 1. Particle Canvas Background Component
-const NeuralBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0, 8);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    dirLight.position.set(5, 5, 5);
-    scene.add(dirLight);
-
-    // Create 3D network group
-    const group = new THREE.Group();
-    scene.add(group);
-
-    const nodeCount = 30;
-    const geometry = new THREE.SphereGeometry(0.08, 8, 8);
-    const nodes: THREE.Mesh[] = [];
-    const basePositions: THREE.Vector3[] = [];
-
-    // Distribute nodes randomly
-    for (let i = 0; i < nodeCount; i++) {
-      const isCandidate = i % 7 === 0;
-      const isJob = i % 11 === 0;
-      
-      let color = 0x4f46e5; // Indigo default
-      if (isCandidate) color = 0x10b981; // Emerald
-      else if (isJob) color = 0x8b5cf6; // Violet
-      
-      const mat = new THREE.MeshPhongMaterial({
-        color,
-        emissive: color,
-        emissiveIntensity: 0.35,
-        transparent: true,
-        opacity: 0.7
-      });
-      const mesh = new THREE.Mesh(geometry, mat);
-      
-      const pos = new THREE.Vector3(
-        (Math.random() - 0.5) * 14,
-        (Math.random() - 0.5) * 9,
-        (Math.random() - 0.5) * 6
-      );
-      mesh.position.copy(pos);
-      group.add(mesh);
-      nodes.push(mesh);
-      basePositions.push(pos.clone());
-    }
-
-    // Connect close nodes with lines
-    const lineMat = new THREE.LineBasicMaterial({
-      color: 0x4f46e5,
-      transparent: true,
-      opacity: 0.1
-    });
-
-    const lines: THREE.Line[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dist = nodes[i].position.distanceTo(nodes[j].position);
-        if (dist < 3.2) {
-          const points = [nodes[i].position, nodes[j].position];
-          const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-          const line = new THREE.Line(lineGeo, lineMat);
-          group.add(line);
-          lines.push(line);
-        }
-      }
-    }
-
-    // Resize handling
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener("resize", handleResize);
-
-    // Theme integration
-    const updateThemeColors = (dark: boolean) => {
-      if (dark) {
-        lineMat.color.setHex(0x818cf8);
-        lineMat.opacity = 0.14;
-      } else {
-        lineMat.color.setHex(0x4f46e5);
-        lineMat.opacity = 0.08;
-      }
-    };
-    
-    const isDark = document.documentElement.classList.contains("dark");
-    updateThemeColors(isDark);
-
-    const observer = new MutationObserver(() => {
-      const dark = document.documentElement.classList.contains("dark");
-      updateThemeColors(dark);
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-
-    // Animation variables
-    let animationId = 0;
-    let mouseX = 0;
-    let mouseY = 0;
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-
-    const clock = new THREE.Clock();
-    const tick = () => {
-      const elapsed = clock.getElapsedTime();
-      
-      // Floating wave animation of nodes
-      nodes.forEach((node, idx) => {
-        const base = basePositions[idx];
-        node.position.x = base.x + Math.sin(elapsed * 0.4 + base.y) * 0.12;
-        node.position.y = base.y + Math.cos(elapsed * 0.4 + base.x) * 0.12;
-      });
-
-      // Subtle rotation
-      group.rotation.y = elapsed * 0.015 + mouseX * 0.04;
-      group.rotation.x = elapsed * 0.008 + mouseY * 0.04;
-
-      renderer.render(scene, camera);
-      animationId = requestAnimationFrame(tick);
-    };
-    tick();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousemove", handleMouseMove);
-      observer.disconnect();
-      cancelAnimationFrame(animationId);
-      
-      geometry.dispose();
-      lineMat.dispose();
-      nodes.forEach((mesh) => (mesh.material as THREE.Material).dispose());
-      renderer.dispose();
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 -z-10 pointer-events-none" />;
-};
 
 
 
@@ -597,6 +440,112 @@ const CareerJourneyTimeline = ({ experienceYears, skills }: { experienceYears: n
 
 
 
+
+// 3b. MultiRadarChart for Benchmark Harness
+interface MultiRadarChartProps {
+  results: RankingResult[];
+}
+
+const MultiRadarChart: React.FC<MultiRadarChartProps> = ({ results }) => {
+  const width = 600;
+  const height = 400;
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = 130;
+
+  const axes = [
+    { name: "Skill Overlap", key: "skill_overlap" as keyof FeatureVector, fn: (v: number) => v },
+    { name: "KG Closeness", key: "kg_skill_distance" as keyof FeatureVector, fn: (v: number) => Math.max(0, 1 - v) },
+    { name: "Dense Similarity", key: "dense_similarity" as keyof FeatureVector, fn: (v: number) => v },
+    { name: "Keyword (BM25)", key: "bm25_score" as keyof FeatureVector, fn: (v: number) => Math.min(1, v / 15) },
+    { name: "Trajectory Align", key: "trajectory_alignment" as keyof FeatureVector, fn: (v: number) => v },
+    { name: "Behavioral", key: "behavioral_score" as keyof FeatureVector, fn: (v: number) => v },
+    { name: "Seniority Match", key: "seniority_match" as keyof FeatureVector, fn: (v: number) => v }
+  ];
+
+  const gridCircles = [0.25, 0.5, 0.75, 1];
+  const gridPolygons = gridCircles.map((scale) => {
+    return axes.map((_, i) => {
+      const angle = (i * 2 * Math.PI) / axes.length - Math.PI / 2;
+      const x = cx + radius * scale * Math.cos(angle);
+      const y = cy + radius * scale * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(" ");
+  });
+
+  const colors = ["#4F46E5", "#10B981", "#EC4899", "#F59E0B", "#8B5CF6", "#06B6D4"];
+
+  return (
+    <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-6 shadow-sm w-full mb-6">
+      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 font-sans">Multi-Candidate Telemetry Array</h4>
+      <div className="flex flex-wrap gap-4 mb-4 justify-center">
+        {results.map((r, i) => (
+          <div key={r.candidate_id} className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+            {r.candidate_id}
+          </div>
+        ))}
+      </div>
+      <svg width={width} height={height} className="overflow-visible">
+        {gridPolygons.map((points, idx) => (
+          <polygon key={idx} points={points} fill="none" stroke="rgba(15, 23, 42, 0.1)" strokeWidth="1" strokeDasharray={idx < 3 ? "3,3" : "none"} />
+        ))}
+        {axes.map((axis, i) => {
+          const angle = (i * 2 * Math.PI) / axes.length - Math.PI / 2;
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          const lx = cx + (radius + 25) * Math.cos(angle);
+          const ly = cy + (radius + 15) * Math.sin(angle);
+          let textAnchor: "middle" | "start" | "end" = "middle";
+          if (Math.cos(angle) > 0.1) textAnchor = "start";
+          if (Math.cos(angle) < -0.1) textAnchor = "end";
+          return (
+            <g key={i}>
+              <line x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(15, 23, 42, 0.1)" strokeWidth="1" />
+              <text x={lx} y={ly} fill="#64748B" fontSize="10" fontWeight="600" textAnchor={textAnchor} alignmentBaseline="middle" className="font-sans dark:fill-slate-400">
+                {axis.name}
+              </text>
+            </g>
+          );
+        })}
+        {results.map((r, rIdx) => {
+          const cColor = colors[rIdx % colors.length];
+          const pts = axes.map((axis, i) => {
+            const rawValue = r.features[axis.key] ?? 0;
+            const value = axis.fn(rawValue);
+            const angle = (i * 2 * Math.PI) / axes.length - Math.PI / 2;
+            const x = cx + radius * value * Math.cos(angle);
+            const y = cy + radius * value * Math.sin(angle);
+            return `${x},${y}`;
+          }).join(" ");
+          return (
+            <polygon
+              key={r.candidate_id}
+              points={pts}
+              fill="transparent"
+              stroke={cColor}
+              strokeWidth="2.5"
+              className="transition-all duration-500 opacity-80 hover:opacity-100 cursor-pointer"
+            />
+          );
+        })}
+        {results.map((r, rIdx) => {
+          const cColor = colors[rIdx % colors.length];
+          return axes.map((axis, i) => {
+            const rawValue = r.features[axis.key] ?? 0;
+            const value = axis.fn(rawValue);
+            const angle = (i * 2 * Math.PI) / axes.length - Math.PI / 2;
+            const x = cx + radius * value * Math.cos(angle);
+            const y = cy + radius * value * Math.sin(angle);
+            return <circle key={`${r.candidate_id}-${i}`} cx={x} cy={y} r="4" fill={cColor} stroke="white" strokeWidth="1.5" className="dark:stroke-slate-900" />;
+          });
+        })}
+      </svg>
+    </div>
+  );
+};
+
+
 export default function App() {
   const [showPortal, setShowPortal] = useState(false);
 
@@ -736,7 +685,7 @@ function PortalApp() {
   const [newCandLoc, setNewCandLoc] = useState("");
   const [newCandGit, setNewCandGit] = useState("");
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = "http://localhost:8001";
 
   // Check backend health & Load initial data
   const checkHealth = async () => {
@@ -888,7 +837,7 @@ function PortalApp() {
       alert("Database seeded successfully with 3 sample jobs and 4 structured candidates!");
     } catch (err) {
       console.error("Seeding failed", err);
-      alert("Seeding failed. Please check if backend is running on http://localhost:8000");
+      alert("Seeding failed. Please check if backend is running on http://localhost:8001");
     } finally {
       setSeeding(false);
     }
@@ -2073,6 +2022,12 @@ function PortalApp() {
                           (retrieved via the Hybrid Retrieval engine and Knowledge Graph distance index) across all ranked candidates.
                         </p>
                       </div>
+
+                      {rankingResults.length > 0 ? (
+                        <div className="w-full flex justify-center">
+                          <MultiRadarChart results={rankingResults} />
+                        </div>
+                      ) : null}
 
                       {rankingResults.length > 0 ? (
                         <div className="bg-white/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl overflow-hidden shadow-luxe backdrop-blur-md">

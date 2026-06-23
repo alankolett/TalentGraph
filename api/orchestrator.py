@@ -4,6 +4,8 @@ from api.database import DatabaseManager
 from embeddings.indexer import QdrantIndexer
 from embeddings.models import CandidateVectorPoint
 from embeddings.service import EmbeddingService
+from explainability.classifier import TagClassifier
+from explainability.generator import ExplanationGenerator
 from feature_engineering.behavioral import (
     BehavioralSignalExtractor,
     SignalNormalizer,
@@ -19,8 +21,6 @@ from retrieval.bm25 import BM25Index
 from retrieval.dense import DenseRetriever
 from retrieval.filter import MetadataFilter
 from retrieval.hybrid import HybridRetriever
-from explainability.classifier import TagClassifier
-from explainability.generator import ExplanationGenerator
 
 
 class RankingOrchestrator:

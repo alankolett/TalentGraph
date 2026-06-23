@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from fastapi import FastAPI, File, HTTPException, UploadFile, Request
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.database import DatabaseManager
 from api.orchestrator import RankingOrchestrator
-from common.settings import Settings, get_settings
+from common.settings import get_settings
 from embeddings.models import EmbeddingConfig
 from embeddings.service import EmbeddingService
 from preprocessing.cleaning import DataCleaner
@@ -21,7 +21,7 @@ from reranking.reranker import CrossEncoderReranker
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load model singletons once at startup
-    settings = get_settings()
+    _ = get_settings()
     app.state.db = DatabaseManager()
     
     # Initialize embedding service with default config
@@ -88,7 +88,7 @@ def add_job(job: JobRecord) -> dict[str, Any]:
 @app.post("/candidates/bulk-upload", status_code=201)
 async def upload_candidates(
     request: Request,
-    file: UploadFile = File(None),
+    file: UploadFile = File(None),  # noqa: B008
     candidates: list[CandidateRecord] | None = None,
 ) -> dict[str, Any]:
     # Dynamic JSON payload fallback when standard parsing fails due to multipart configuration
@@ -99,9 +99,14 @@ async def upload_candidates(
             if isinstance(body, list):
                 candidates = [CandidateRecord.model_validate(c) for c in body]
             elif isinstance(body, dict) and "candidates" in body:
-                candidates = [CandidateRecord.model_validate(body_c) for body_c in body["candidates"]]
+                candidates = [
+                    CandidateRecord.model_validate(body_c)
+                    for body_c in body["candidates"]
+                ]
         except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Failed to parse JSON body: {exc}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to parse JSON body: {exc}"
+            ) from exc
 
     # Support file upload (CSV or JSON)
     if file:
@@ -113,9 +118,13 @@ async def upload_candidates(
             elif ext in {".json", ".jsonl", ".ndjson"}:
                 df = pd.read_json(io.BytesIO(content), lines=(ext != ".json"))
             else:
-                raise HTTPException(status_code=400, detail="Unsupported file format. Use CSV or JSON.")
+                raise HTTPException(
+                    status_code=400, detail="Unsupported file format. Use CSV or JSON."
+                )
         except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Failed to parse file: {exc}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to parse file: {exc}"
+            ) from exc
 
         # Process through Phase 2 cleaner and validator
         cleaner = DataCleaner()
@@ -137,7 +146,10 @@ async def upload_candidates(
             app.state.db.save_candidate(cand.model_dump(mode="json"))
         return {"status": "success", "count": len(candidates)}
 
-    raise HTTPException(status_code=400, detail="Provide a 'file' upload or a JSON list of 'candidates'.")
+    raise HTTPException(
+        status_code=400,
+        detail="Provide a 'file' upload or a JSON list of 'candidates'.",
+    )
 
 
 @app.post("/rank/{job_id}")
@@ -154,9 +166,9 @@ def run_ranking(
         return {"status": "success", "results": results}
     except ValueError as exc:
         # 404 for missing job or candidates
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.get("/rank/{job_id}/results")

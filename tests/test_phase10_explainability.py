@@ -1,4 +1,3 @@
-import pytest
 
 from explainability.classifier import TagClassifier
 from explainability.generator import ExplanationGenerator

@@ -1,8 +1,7 @@
 import networkx as nx
 import pytest
 
-from feature_engineering.behavioral import BehavioralProfile
-from parsers.models import ExperienceEntry, ParsedJob, ParsedResume
+from parsers.models import ParsedJob, ParsedResume
 from ranking_engine.features import FeatureBuilder
 from ranking_engine.models import FeatureVector
 from ranking_engine.scoring import ScoringEngine

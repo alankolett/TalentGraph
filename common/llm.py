@@ -63,8 +63,8 @@ class GroqProvider:
         self.model = model
 
     def generate(self, prompt: str) -> str:
-        import urllib.request
         import json
+        import urllib.request
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -94,8 +94,8 @@ class GeminiProvider:
         self.model = model
 
     def generate(self, prompt: str) -> str:
-        import urllib.request
         import json
+        import urllib.request
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
         payload = {

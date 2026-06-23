@@ -1,15 +1,17 @@
 import json
 import sys
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from api.database import DatabaseManager
 from api.orchestrator import RankingOrchestrator
-from embeddings.service import EmbeddingService
 from embeddings.models import EmbeddingConfig
+from embeddings.service import EmbeddingService
 from reranking.reranker import CrossEncoderReranker
+
 
 def seed_sample_data(db: DatabaseManager):
     """Seed sample data from raw CSV files into SQLite database."""
