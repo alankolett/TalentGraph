@@ -53,7 +53,7 @@ class Phase2Pipeline:
 
             # Helper to stream JSONL
             def stream_jsonl(path: Path):
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     for idx, line in enumerate(f):
                         if line.strip():
                             yield idx, json.loads(line)

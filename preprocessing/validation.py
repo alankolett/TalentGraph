@@ -20,7 +20,16 @@ class ProfileModel(BaseModel):
     years_of_experience: float = Field(ge=0, le=50)
     current_title: str
     current_company: str
-    current_company_size: Literal["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"]
+    current_company_size: Literal[
+        "1-10",
+        "11-50",
+        "51-200",
+        "201-500",
+        "501-1000",
+        "1001-5000",
+        "5001-10000",
+        "10001+",
+    ]
     current_industry: str
 
 
@@ -32,7 +41,16 @@ class CareerEntryModel(BaseModel):
     duration_months: int = Field(ge=0)
     is_current: bool
     industry: str
-    company_size: Literal["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"]
+    company_size: Literal[
+        "1-10",
+        "11-50",
+        "51-200",
+        "201-500",
+        "501-1000",
+        "1001-5000",
+        "5001-10000",
+        "10001+",
+    ]
     description: str
 
 

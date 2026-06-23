@@ -1,14 +1,10 @@
 import json
-from pathlib import Path
 
 import docx
 import pandas as pd
-from pydantic import ValidationError
 
 from preprocessing.pipeline import Phase2Pipeline
 from preprocessing.validation import (
-    CandidateSchemaValidator,
-    JDStructurer,
     validate_against_schema,
 )
 
@@ -201,7 +197,7 @@ def test_jd_structurer_and_pipeline(tmp_path) -> None:
     # Verify JSON JobRecord exists
     job_json_file = processed_dir / "job_redrob_senior_ai_engineer.json"
     assert job_json_file.exists()
-    with open(job_json_file, "r", encoding="utf-8") as f:
+    with open(job_json_file, encoding="utf-8") as f:
         job_data = json.load(f)
     assert job_data["id"] == "job_redrob_senior_ai_engineer"
     assert "embeddings-based retrieval systems" in job_data["must_have_skills"]
@@ -212,4 +208,4 @@ def test_jd_structurer_and_pipeline(tmp_path) -> None:
     assert cand_df.iloc[0]["id"] == "CAND_1234567"
     assert cand_df.iloc[0]["total_career_months"] == 36
     assert cand_df.iloc[0]["num_employers"] == 1
-    assert cand_df.iloc[0]["current_role_ai_relevant"] == True
+    assert bool(cand_df.iloc[0]["current_role_ai_relevant"])

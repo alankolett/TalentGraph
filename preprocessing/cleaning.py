@@ -227,7 +227,8 @@ def flatten_candidate(record: dict[str, Any]) -> dict[str, Any]:
     )
     edu_desc = " ".join(
         [
-            f"{e.get('degree', '')} in {e.get('field_of_study', '')} from {e.get('institution', '')}"
+            f"{e.get('degree', '')} in {e.get('field_of_study', '')} "
+            f"from {e.get('institution', '')}"
             for e in education
         ]
     )
