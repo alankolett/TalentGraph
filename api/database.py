@@ -47,10 +47,22 @@ class DatabaseManager:
                     education TEXT,
                     location TEXT,
                     github_url TEXT,
-                    activity_metadata TEXT
+                    activity_metadata TEXT,
+                    skills TEXT,
+                    career_history TEXT
                 )
                 """
             )
+            # Migration check: try adding new columns to an existing table
+            try:
+                conn.execute("ALTER TABLE candidates ADD COLUMN skills TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE candidates ADD COLUMN career_history TEXT")
+            except sqlite3.OperationalError:
+                pass
+
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS rankings (
@@ -132,8 +144,12 @@ class DatabaseManager:
         with self.get_connection() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO candidates (id, raw_resume_text, skills_raw, experience_years, education, location, github_url, activity_metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO candidates (
+                    id, raw_resume_text, skills_raw, experience_years,
+                    education, location, github_url, activity_metadata,
+                    skills, career_history
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     cand["id"],
@@ -144,6 +160,8 @@ class DatabaseManager:
                     cand.get("location"),
                     cand.get("github_url"),
                     json.dumps(cand.get("activity_metadata", {})),
+                    json.dumps(cand.get("skills", [])),
+                    json.dumps(cand.get("career_history", [])),
                 ),
             )
             conn.commit()
@@ -161,7 +179,17 @@ class DatabaseManager:
                 "education": row["education"],
                 "location": row["location"],
                 "github_url": row["github_url"],
-                "activity_metadata": json.loads(row["activity_metadata"]) if row["activity_metadata"] else {},
+                "activity_metadata": (
+                    json.loads(row["activity_metadata"])
+                    if row["activity_metadata"]
+                    else {}
+                ),
+                "skills": json.loads(row["skills"]) if row["skills"] else [],
+                "career_history": (
+                    json.loads(row["career_history"])
+                    if row["career_history"]
+                    else []
+                ),
             }
 
     def get_all_candidates(self) -> list[dict[str, Any]]:
@@ -176,7 +204,17 @@ class DatabaseManager:
                     "education": row["education"],
                     "location": row["location"],
                     "github_url": row["github_url"],
-                    "activity_metadata": json.loads(row["activity_metadata"]) if row["activity_metadata"] else {},
+                    "activity_metadata": (
+                        json.loads(row["activity_metadata"])
+                        if row["activity_metadata"]
+                        else {}
+                    ),
+                    "skills": json.loads(row["skills"]) if row["skills"] else [],
+                    "career_history": (
+                        json.loads(row["career_history"])
+                        if row["career_history"]
+                        else []
+                    ),
                 }
                 for row in rows
             ]

@@ -42,6 +42,9 @@ def main() -> None:
             candidate_id=record.id,
             metadata=record.activity_metadata,
             github_url=str(record.github_url) if record.github_url else None,
+            skills=record.skills,
+            career_history=record.career_history,
+            experience_years=record.experience_years,
         )
         raw_profiles.append(profile)
 

@@ -14,6 +14,25 @@ class CandidateRecord(BaseModel):
     location: str | None = None
     github_url: HttpUrl | None = None
     activity_metadata: dict[str, Any] = Field(default_factory=dict)
+    skills: list[dict[str, Any]] = Field(default_factory=list)
+    career_history: list[dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("skills", "career_history", mode="before")
+    @classmethod
+    def parse_json_fields(cls, value: Any) -> list[dict[str, Any]]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [dict(item) for item in value]
+        if isinstance(value, str):
+            if not value.strip():
+                return []
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return []
+            return parsed if isinstance(parsed, list) else []
+        return []
 
     @field_validator("skills_raw", mode="before")
     @classmethod

@@ -20,8 +20,10 @@ def test_compute_recency_score_decay() -> None:
 def test_compute_contribution_frequency() -> None:
     extractor = BehavioralSignalExtractor()
 
-    # Timeline with specific counts
-    timeline_with_counts = [{"date": "2026-05-01", "count": 10}, {"date": "2026-06-10", "count": 15}]
+    timeline_with_counts = [
+        {"date": "2026-05-01", "count": 10},
+        {"date": "2026-06-10", "count": 15},
+    ]
     assert extractor.compute_contribution_frequency(timeline_with_counts) == 25.0
 
     # Timeline with missing counts fallback
@@ -43,8 +45,9 @@ def test_compute_learning_velocity() -> None:
     ]
     assert extractor.compute_learning_velocity(skills_over_time) == pytest.approx(1.0, abs=0.05)
 
-    # Less than 2 checkpoints -> velocity = 0.0
-    assert extractor.compute_learning_velocity([{"date": "2020-01-01", "skills": ["python"]}]) == 0.0
+    assert extractor.compute_learning_velocity(
+        [{"date": "2020-01-01", "skills": ["python"]}]
+    ) == 0.0
     assert extractor.compute_learning_velocity([]) == 0.0
 
 
@@ -68,7 +71,10 @@ def test_raw_profile_confidence_degradation() -> None:
     full_metadata = {
         "last_activity_date": "2026-06-10",
         "timeline": [{"date": "2026-06-10", "count": 5}],
-        "skills_over_time": [{"date": "2020-01-01", "skills": ["python"]}, {"date": "2022-01-01", "skills": ["python", "ml"]}],
+        "skills_over_time": [
+            {"date": "2020-01-01", "skills": ["python"]},
+            {"date": "2022-01-01", "skills": ["python", "ml"]},
+        ],
     }
     profile = extractor.extract_raw_profile("c1", full_metadata, "https://github.com/c1")
     assert profile["signal_confidence"] == 1.0
@@ -118,3 +124,84 @@ def test_signal_normalization_population() -> None:
     assert c2_prof.learning_velocity == 0.0
     assert c2_prof.open_source_breadth == 0.0
     assert c2_prof.signal_confidence == 0.5
+
+
+def test_honeypot_detector() -> None:
+    from feature_engineering.behavioral import HoneypotDetector
+
+    detector = HoneypotDetector()
+
+    # 1. Test clean profile
+    clean_skills = [
+        {"name": "Python", "proficiency": "expert", "duration_months": 36},
+        {"name": "ML", "proficiency": "intermediate", "duration_months": 12},
+    ]
+    clean_career = [
+        {"company": "Acme", "duration_months": 24},
+        {"company": "Beta", "duration_months": 24},
+    ]
+    assert len(detector.detect_honeypots(clean_skills, clean_career, 4.0)) == 0
+
+    # 2. Test expert skill with 0 duration
+    dirty_skills = [
+        {"name": "Python", "proficiency": "expert", "duration_months": 0},
+    ]
+    flags = detector.detect_honeypots(dirty_skills, clean_career, 4.0)
+    assert len(flags) > 0
+    assert any("expert_skill_zero_duration" in f for f in flags)
+
+    # 3. Test inconsistent YoE
+    flags = detector.detect_honeypots(clean_skills, clean_career, 10.0)
+    assert len(flags) > 0
+    assert any("inconsistent_experience_years" in f for f in flags)
+
+    # 4. Test empty career history with declared YoE
+    flags = detector.detect_honeypots(clean_skills, [], 4.0)
+    assert len(flags) > 0
+    assert any("inconsistent_experience_years" in f for f in flags)
+
+
+def test_availability_engagement_trust_scores() -> None:
+    extractor = BehavioralSignalExtractor(current_date_str="2026-06-17")
+
+    metadata = {
+        "last_active_date": "2026-06-17",
+        "open_to_work_flag": True,
+        "notice_period_days": 15,
+        "recruiter_response_rate": 0.9,
+        "avg_response_time_hours": 2.0,
+        "interview_completion_rate": 0.8,
+        "verified_email": True,
+        "verified_phone": True,
+        "linkedin_connected": True,
+        "endorsements_received": 10,
+    }
+
+    skills = [{"name": "Python"}]
+    career = [{"company": "A", "duration_months": 12}]
+
+    profile = extractor.extract_raw_profile(
+        candidate_id="c1",
+        metadata=metadata,
+        github_url="https://github.com/c1",
+        skills=skills,
+        career_history=career,
+        experience_years=1.0,
+    )
+
+    # Check that availability, engagement, trust, honeypot scores are correctly computed
+    expected_availability = 0.4 * 1.0 + 0.4 * 1.0 + 0.2 * 1.0
+    assert profile["availability_score"] == pytest.approx(expected_availability)
+
+    expected_engagement = (
+        0.4 * 0.9 + 0.3 * (1.0 / (1.0 + 2.0 / 24.0)) + 0.3 * 0.8
+    )
+    assert profile["engagement_score"] == pytest.approx(expected_engagement)
+
+    expected_trust = (
+        0.2 * 1.0 + 0.2 * 1.0 + 0.2 * 1.0 + 0.4 * min(1.0, 10.0 / 1.0 / 5.0)
+    )
+    assert profile["trust_score"] == pytest.approx(expected_trust)
+    assert profile["honeypot_score"] == 0.0
+    assert len(profile["honeypot_flags"]) == 0
+

@@ -89,6 +89,9 @@ class RankingOrchestrator:
                 candidate_id=record.id,
                 metadata=record.activity_metadata,
                 github_url=str(record.github_url) if record.github_url else None,
+                skills=record.skills,
+                career_history=record.career_history,
+                experience_years=record.experience_years,
             )
             raw_profiles.append(raw_prof)
 
@@ -164,7 +167,10 @@ class RankingOrchestrator:
 
         # Sort to get baseline ranks
         scored_candidates.sort(key=lambda x: x[0].final_score, reverse=True)
-        original_ranks = {item[0].candidate_id: idx for idx, item in enumerate(scored_candidates, start=1)}
+        original_ranks = {
+            item[0].candidate_id: idx
+            for idx, item in enumerate(scored_candidates, start=1)
+        }
 
         # 6. Cross-Encoder Reranking & Score Blending
         cand_ids = [item[0].candidate_id for item in scored_candidates]
