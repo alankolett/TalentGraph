@@ -31,13 +31,34 @@ class QdrantIndexer:
         top_k: int = 10,
         filters: dict[str, Any] | None = None,
     ) -> list[VectorSearchResult]:
-        query = np.array(query_vector, dtype=np.float32)
-        results = []
+        if not self._points:
+            return []
+
+        valid_points = []
         for point in self._points.values():
             if filters and not self._matches_filters(point.payload, filters):
                 continue
-            score = self._cosine(query, np.array(point.vector, dtype=np.float32))
-            results.append(VectorSearchResult(id=point.id, score=score, payload=point.payload))
+            valid_points.append(point)
+
+        if not valid_points:
+            return []
+
+        vectors = np.array([p.vector for p in valid_points], dtype=np.float32)
+        query = np.array(query_vector, dtype=np.float32)
+
+        query_norm = np.linalg.norm(query)
+        if query_norm == 0:
+            scores = np.zeros(len(valid_points), dtype=np.float32)
+        else:
+            norms = np.linalg.norm(vectors, axis=1)
+            norms[norms == 0] = 1.0
+            dots = np.dot(vectors, query)
+            scores = dots / (norms * query_norm)
+
+        results = []
+        for idx, point in enumerate(valid_points):
+            results.append(VectorSearchResult(id=point.id, score=float(scores[idx]), payload=point.payload))
+
         return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]
 
     def count(self) -> int:

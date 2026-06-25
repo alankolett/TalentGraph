@@ -7,6 +7,7 @@ __pycache__/
 *.egg-info/
 .env
 data/raw/*
+data/raw/redrob_challenge/
 data/processed/*
 data/embeddings/*
 data/knowledge_graph/*

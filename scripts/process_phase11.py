@@ -62,11 +62,53 @@ def main() -> None:
                 resumes[res.candidate_id] = res
 
     candidates_meta = {}
+    candidates_meta_dicts = {}
     meta_path = processed_dir / "candidates.parquet"
     if meta_path.exists():
         df = pd.read_parquet(meta_path)
         for _, row in df.iterrows():
-            candidates_meta[str(row["id"])] = float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+            cid = str(row["id"])
+            candidates_meta[cid] = float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+
+            # Parse activity_metadata if it is a JSON string
+            act_meta = {}
+            if "activity_metadata" in row and pd.notna(row["activity_metadata"]):
+                val = row["activity_metadata"]
+                if isinstance(val, str):
+                    try:
+                        act_meta = json.loads(val)
+                    except Exception:
+                        pass
+                elif isinstance(val, dict):
+                    act_meta = val
+
+            # Also parse redrob_signals if present
+            if not act_meta and "redrob_signals" in row and pd.notna(row["redrob_signals"]):
+                val = row["redrob_signals"]
+                if isinstance(val, str):
+                    try:
+                        act_meta = json.loads(val)
+                    except Exception:
+                        pass
+                elif isinstance(val, dict):
+                    act_meta = val
+
+            # Construct cand_meta
+            candidates_meta_dicts[cid] = {
+                "location": row.get("location") if pd.notna(row.get("location")) else "",
+                "willing_to_relocate": act_meta.get("willing_to_relocate"),
+                "notice_period_days": act_meta.get("notice_period_days"),
+                "github_activity_score": act_meta.get("github_activity_score", -1),
+                "total_career_months": (
+                    float(row.get("total_career_months"))
+                    if pd.notna(row.get("total_career_months"))
+                    else 0.0
+                ),
+                "num_employers": (
+                    int(row.get("num_employers")) if pd.notna(row.get("num_employers")) else 0
+                ),
+                "github_url": row.get("github_url") if pd.notna(row.get("github_url")) else None,
+            }
 
     behav_profiles = {}
     behav_path = processed_dir / "behavioral_profiles.jsonl"
@@ -123,16 +165,19 @@ def main() -> None:
             if line.strip():
                 jobs.append(ParsedJob.model_validate(json.loads(line)))
 
-    # 3. Setup hand-labeled relevance judgments (0-3 rating)
-    # Job j1: Senior Backend Engineer (expected match is c1)
-    # Job j2: Data Engineer (expected match is c2)
+    # 3. Setup hand-labeled relevance judgments (0-3 rating).
+    # These IDs come from Phase 9 reranking results for job_redrob_senior_ai_engineer.
+    # Relevance: 3 = highly relevant, 2 = relevant, 1 = partial match, 0 = not relevant.
+    real_job_id = "job_redrob_senior_ai_engineer"
     judgments = [
-        RelevanceJudgment(job_id="j1", candidate_id="c1", relevance=3),
-        RelevanceJudgment(job_id="j1", candidate_id="c2", relevance=1),
-        RelevanceJudgment(job_id="j1", candidate_id="c3", relevance=0),
-        RelevanceJudgment(job_id="j2", candidate_id="c2", relevance=3),
-        RelevanceJudgment(job_id="j2", candidate_id="c1", relevance=1),
-        RelevanceJudgment(job_id="j2", candidate_id="c3", relevance=0),
+        # Top candidates from Phase 9 blended ranking
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0068351", relevance=3),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0008425", relevance=3),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0040178", relevance=2),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0051630", relevance=2),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0098952", relevance=1),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0007009", relevance=1),
+        RelevanceJudgment(job_id=real_job_id, candidate_id="CAND_0052328", relevance=0),
     ]
 
     harness = EvaluationHarness()
@@ -150,9 +195,10 @@ def main() -> None:
         kg=kg,
         behav_profiles=behav_profiles,
         candidates_meta=candidates_meta,
+        candidates_meta_dicts=candidates_meta_dicts,
     )
 
-    results = harness.compare(baseline_recs, system_recs, judgments, k=2)
+    results = harness.compare(baseline_recs, system_recs, judgments, k=5)
 
     # 5. Output results
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +206,7 @@ def main() -> None:
     output_path.write_text(json.dumps(report_dict, indent=2), encoding="utf-8")
 
     print("\n================== TalentGraph Evaluation Metrics Benchmarks ==================")
-    print(f"Computed over {len(jobs)} jobs and {len(resumes)} candidates (k=2)")
+    print(f"Computed over {len(jobs)} jobs and {len(resumes)} candidates (k=5)")
     print(f"Results written to {output_path}\n")
     print(f"{'Metric Name':<20} | {'Baseline Score':<15} | {'System Score':<15} | {'Delta':<10}")
     print("-" * 68)

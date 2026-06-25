@@ -17,6 +17,34 @@ uvicorn api.main:app --reload
 
 The API health check is available at `http://localhost:8000/health`.
 
+## Dataset Setup
+
+The challenge dataset (~487 MB) is **not** committed to this repository.
+To reproduce any pipeline stage, download the official
+**[PUB] India Runs Data & AI Challenge** zip from the competition page,
+extract it, and place the contents at the path below:
+
+```
+data/raw/redrob_challenge/
+├── candidates.jsonl           # 100K candidate records (~487 MB)
+├── candidate_schema.json
+├── job_description.docx
+├── redrob_signals_doc.docx
+├── submission_spec.docx
+├── sample_candidates.json
+├── sample_submission.csv
+└── validate_submission.py
+```
+
+Once the files are in place, you can run the full ranking pipeline:
+
+```powershell
+python rank.py --candidates ./data/raw/redrob_challenge/candidates.jsonl --out ./submission.csv
+```
+
+> **Note:** All pipeline scripts reference this path as a relative path from
+> the repo root. Never use absolute paths or paths under `Downloads/`.
+
 ## Phase 2 Data Pipeline
 
 Place raw files at `data/raw/candidates.csv` and `data/raw/jobs.csv` (JSON and

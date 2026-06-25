@@ -10,8 +10,8 @@ def main() -> None:
     parser = ArgumentParser(description="Run Phase 2 raw dataset cleaning and validation.")
     parser.add_argument(
         "--raw-dir",
-        default="data/raw",
-        help="Directory containing candidates/jobs files.",
+        default="data/raw/redrob_challenge",
+        help="Directory containing candidates/jobs files (challenge dataset).",
     )
     parser.add_argument("--processed-dir", default="data/processed", help="Output directory.")
     args = parser.parse_args()

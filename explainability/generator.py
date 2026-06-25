@@ -1,3 +1,4 @@
+
 import json
 import re
 from typing import Any
@@ -27,7 +28,9 @@ class ExplanationPromptBuilder:
                 "matched_points": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Concrete points where candidate skills match the job must-haves.",
+                    "description": (
+                        "Concrete points where candidate skills match the job must-haves."
+                    ),
                 },
                 "missing_points": {
                     "type": "array",
@@ -36,7 +39,10 @@ class ExplanationPromptBuilder:
                 },
                 "narrative": {
                     "type": "string",
-                    "description": "A concise, professional recruiter-facing narrative explaining why this candidate was selected.",
+                    "description": (
+                        "A concise, professional recruiter-facing narrative "
+                        "explaining why this candidate was selected."
+                    ),
                 },
             },
             "required": ["matched_points", "missing_points", "narrative"],
@@ -62,8 +68,10 @@ class ExplanationPromptBuilder:
         }
 
         return (
-            "Analyze this candidate and job matching data, and generate a structured recruitment justification. "
-            "Your response must be a single JSON object matching the schema. Do not output any other text or markdown formatting except the JSON.\n\n"
+            "Analyze this candidate and job matching data, and generate a structured "
+            "recruitment justification. Your response must be a single JSON object "
+            "matching the schema. Do not output any other text or markdown formatting "
+            "except the JSON.\n\n"
             f"JSON Schema:\n{json.dumps(schema, indent=2)}\n\n"
             f"Candidate Matching Data:\n{json.dumps(input_details, indent=2)}\n"
         )
@@ -85,10 +93,13 @@ class ExplanationGenerator:
         features: FeatureVector,
         tags: list[str],
         candidate_skills: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ExplainedCandidate:
         """Generate candidate explanation. Falls back to deterministic templates if LLM fails."""
         if not self.llm_provider:
-            return self._fallback_explanation(candidate_id, rank, final_score, job, features, tags, candidate_skills)
+            return self._fallback_explanation(
+                candidate_id, rank, final_score, job, features, tags, candidate_skills, metadata
+            )
 
         prompt = self.prompt_builder.build_explanation_prompt(candidate_id, job, features, tags)
         try:
@@ -121,7 +132,9 @@ class ExplanationGenerator:
             )
         except Exception:
             # Fall back to template on any error (never block the demo)
-            return self._fallback_explanation(candidate_id, rank, final_score, job, features, tags, candidate_skills)
+            return self._fallback_explanation(
+                candidate_id, rank, final_score, job, features, tags, candidate_skills, metadata
+            )
 
     def _fallback_explanation(
         self,
@@ -132,21 +145,70 @@ class ExplanationGenerator:
         features: FeatureVector,
         tags: list[str],
         candidate_skills: list[str] | None,
+        metadata: dict[str, Any] | None = None,
     ) -> ExplainedCandidate:
         # Determine heuristics for matched/missing skills
         c_skills = candidate_skills or []
         matched = self._heuristic_matches(job, c_skills)
-        missing = [s for s in job.must_have if s.lower().strip() not in {cs.lower().strip() for cs in c_skills}]
+        missing = [
+            s for s in job.must_have
+            if s.lower().strip() not in {cs.lower().strip() for cs in c_skills}
+        ]
 
         tags_str = ", ".join(tags) if tags else "None"
         overlap = features.skill_overlap or 0.0
         seniority = features.seniority_match or 0.0
 
-        narrative = (
-            f"Candidate {candidate_id} is ranked #{rank} for the '{job.title}' role with a composite score of {final_score:.2f}. "
-            f"They show a skill overlap score of {overlap:.1%} and a seniority alignment score of {seniority:.1%}. "
-            f"Key tags associated with their profile: {tags_str}."
+        # Construct dynamic, fact-grounded recruiter narrative
+        matched_clean = [
+            s for s in [*job.must_have, *job.nice_to_have]
+            if s.lower().strip() in {cs.lower().strip() for cs in c_skills}
+        ]
+        matched_str = ", ".join(matched_clean) if matched_clean else "None"
+        missing_str = ", ".join(missing) if missing else "None"
+
+        meta = metadata or {}
+        location = meta.get("location", "Unknown Location")
+        willing_relocate = meta.get("willing_to_relocate")
+        notice_period = meta.get("notice_period_days")
+        gh_score = meta.get("github_activity_score", -1)
+
+        # Build sentences starting with a test-compliant first sentence
+        narrative_parts = [
+            f"Candidate {candidate_id} is ranked #{rank} for the '{job.title}' role "
+            f"with a composite score of {final_score:.2f}."
+        ]
+
+        # Skill overlap details
+        narrative_parts.append(
+            f"They show a skill overlap of {overlap:.1%}, matching requirements like [{matched_str}] "
+            f"and missing [{missing_str}]."
         )
+
+        # Experience & Seniority
+        narrative_parts.append(
+            f"Seniority alignment is rated at {seniority:.1%} based on relevant experience."
+        )
+
+        # Relocation & notice period
+        reloc_str = "willing to relocate" if willing_relocate else "not open to relocation"
+        notice_str = f"notice period is {notice_period} days" if notice_period is not None else "notice period unknown"
+        narrative_parts.append(
+            f"Located in '{location}' ({reloc_str}); {notice_str}."
+        )
+
+        # Behavioral & trust signals
+        behav_score = features.behavioral_score or 0.0
+        hp_score = features.honeypot_score or 0.0
+        narrative_parts.append(
+            f"Profile is verified with a behavioral engagement score of {behav_score:.2f} "
+            f"(honeypot risk: {hp_score:.2f}, GitHub score: {gh_score})."
+        )
+
+        if tags:
+            narrative_parts.append(f"Key classification tag(s): {tags_str}.")
+
+        narrative = " ".join(narrative_parts)
 
         return ExplainedCandidate(
             candidate_id=candidate_id,

@@ -1,4 +1,5 @@
 from typing import Any
+
 import networkx as nx
 
 from feature_engineering.behavioral import BehavioralProfile
@@ -39,7 +40,10 @@ class FeatureBuilder:
         c_skills = {s for s in c_skills if s}
 
         # Normalize job must-have and nice-to-have skills
-        j_skills = {self.ontology_builder.normalize_skill(s) for s in [*job.must_have, *job.nice_to_have]}
+        j_skills = {
+            self.ontology_builder.normalize_skill(s)
+            for s in [*job.must_have, *job.nice_to_have]
+        }
         j_skills = {s for s in j_skills if s}
 
         # 1. Skill Overlap (Jaccard similarity)
@@ -78,7 +82,9 @@ class FeatureBuilder:
 
         # 5. Trajectory Alignment (experience duration and role history counts)
         trajectory_alignment = 0.5
-        t_vector = self.trajectory_analyzer.compute_trajectory_vector(kg, parsed_resume.candidate_id)
+        t_vector = self.trajectory_analyzer.compute_trajectory_vector(
+            kg, parsed_resume.candidate_id
+        )
         if t_vector["role_count"] > 0:
             duration_score = min(1.0, t_vector["avg_role_duration_months"] / 24.0)
             role_score = min(1.0, t_vector["role_count"] / 3.0)
@@ -111,7 +117,9 @@ class FeatureBuilder:
                 if experience_years >= expected_yoe:
                     seniority_match = 1.0
                 else:
-                    seniority_match = float(max(0.0, 1.0 - (expected_yoe - experience_years) / expected_yoe))
+                    seniority_match = float(
+                        max(0.0, 1.0 - (expected_yoe - experience_years) / expected_yoe)
+                    )
 
         # 8. Rubric evaluations and Honeypots
         jd_positive_signal_count = 0

@@ -1,3 +1,5 @@
+from typing import Any
+
 import networkx as nx
 
 from evaluation.metrics import MetricCalculator
@@ -45,6 +47,7 @@ class EvaluationHarness:
         behav_profiles: dict[str, BehavioralProfile],
         candidates_meta: dict[str, float],
         alpha: float = 0.5,
+        candidates_meta_dicts: dict[str, dict[str, Any]] | None = None,
     ) -> dict[str, list[str]]:
         """Run the full hybrid retrieval + feature builder + cross-encoder rerank pipeline."""
         rankings = {}
@@ -70,6 +73,7 @@ class EvaluationHarness:
                     behavioral_profile=behav_profiles.get(cid),
                     retrieval_scores={"dense": match.dense_score, "bm25": match.bm25_score},
                     experience_years=candidates_meta.get(cid),
+                    metadata=candidates_meta_dicts.get(cid) if candidates_meta_dicts else None,
                 )
                 scored = scoring_engine.score_candidate(cid, f_vector)
                 scored_candidates.append(scored)

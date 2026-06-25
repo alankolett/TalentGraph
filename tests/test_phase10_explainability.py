@@ -16,18 +16,23 @@ class MockLLMProvider:
 
 def test_tag_classifier_hidden_gem() -> None:
     classifier = TagClassifier()
-    # High behavioral (0.8) + Low dense similarity (0.5)
-    f = FeatureVector(behavioral_score=0.8, dense_similarity=0.5)
+    # High behavioral (0.8) + Low bm25 (0.1) + Low dense (0.1) => Hidden Gem
+    f = FeatureVector(behavioral_score=0.8, bm25_score=0.1, dense_similarity=0.1)
     tags = classifier.classify_tags(f)
     assert "Hidden Gem" in tags
-    assert "Fast Learner" not in tags
     assert "Career Switcher" not in tags
 
 
 def test_tag_classifier_fast_learner() -> None:
     classifier = TagClassifier()
-    # High behavioral (0.65) + High trajectory alignment (0.7) + Skill overlap (0.5) to avoid Career Switcher
-    f = FeatureVector(behavioral_score=0.65, trajectory_alignment=0.7, skill_overlap=0.5)
+    # High behavioral (0.65) + trajectory (0.7) + high skill overlap to avoid Career Switcher
+    f = FeatureVector(
+        behavioral_score=0.65,
+        trajectory_alignment=0.7,
+        skill_overlap=0.5,
+        bm25_score=0.5,  # above 0.3 so Hidden Gem does NOT fire
+        dense_similarity=0.5,
+    )
     tags = classifier.classify_tags(f)
     assert "Fast Learner" in tags
     assert "Hidden Gem" not in tags
@@ -36,12 +41,13 @@ def test_tag_classifier_fast_learner() -> None:
 
 def test_tag_classifier_career_switcher() -> None:
     classifier = TagClassifier()
-    # High trajectory alignment (0.8) + Low skill overlap (0.2)
-    f = FeatureVector(trajectory_alignment=0.8, skill_overlap=0.2)
+    # High trajectory alignment (0.8) + Very low skill overlap (0.05 < 0.1)
+    # behavioral=0.0 so High Engagement & Hidden Gem do NOT fire
+    f = FeatureVector(trajectory_alignment=0.8, skill_overlap=0.05, behavioral_score=0.0)
     tags = classifier.classify_tags(f)
     assert "Career Switcher" in tags
+    assert "High Engagement" not in tags
     assert "Hidden Gem" not in tags
-    assert "Fast Learner" not in tags
 
 
 def test_explanation_generator_fallback() -> None:

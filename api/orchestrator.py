@@ -230,6 +230,7 @@ class RankingOrchestrator:
                 features=f_vector,
                 tags=tags,
                 candidate_skills=resume.raw_skills,
+                metadata=candidates_meta_dicts.get(cid),
             )
 
             # Dump feature vector for DB serialization

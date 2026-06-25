@@ -21,7 +21,9 @@ from retrieval.hybrid import HybridRetriever
 
 
 def main() -> None:
-    parser = ArgumentParser(description="Run Phase 8 Ranking Engine (Feature Building & Composite Scoring).")
+    parser = ArgumentParser(
+        description="Run Phase 8 Ranking Engine (Feature Building & Composite Scoring)."
+    )
     parser.add_argument(
         "--processed-dir",
         default="data/processed",
@@ -61,7 +63,9 @@ def main() -> None:
         df = pd.read_parquet(meta_path)
         for _, row in df.iterrows():
             cid = str(row["id"])
-            candidates_meta[cid] = float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+            candidates_meta[cid] = (
+                float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+            )
 
             # Parse activity_metadata if it is a JSON string
             act_meta = {}
@@ -92,8 +96,14 @@ def main() -> None:
                 "willing_to_relocate": act_meta.get("willing_to_relocate"),
                 "notice_period_days": act_meta.get("notice_period_days"),
                 "github_activity_score": act_meta.get("github_activity_score", -1),
-                "total_career_months": float(row.get("total_career_months")) if pd.notna(row.get("total_career_months")) else 0.0,
-                "num_employers": int(row.get("num_employers")) if pd.notna(row.get("num_employers")) else 0,
+                "total_career_months": (
+                    float(row.get("total_career_months"))
+                    if pd.notna(row.get("total_career_months"))
+                    else 0.0
+                ),
+                "num_employers": (
+                    int(row.get("num_employers")) if pd.notna(row.get("num_employers")) else 0
+                ),
                 "github_url": row.get("github_url") if pd.notna(row.get("github_url")) else None,
             }
 
@@ -155,7 +165,10 @@ def main() -> None:
 
     print("\n================== TalentGraph Final Ranking Results ==================")
     for job in jobs:
-        print(f"\nJob ID: {job.job_id} | Title: {job.title} | Seniority: {job.seniority} | Location: {job.location}")
+        print(
+            f"\nJob ID: {job.job_id} | Title: {job.title} | "
+            f"Seniority: {job.seniority} | Location: {job.location}"
+        )
 
         # Retrieve candidate shortlist
         shortlist = hybrid.retrieve_hybrid(job, top_k=100)
@@ -194,7 +207,10 @@ def main() -> None:
         scored_candidates.sort(key=lambda x: x.final_score, reverse=True)
 
         for idx, sc in enumerate(scored_candidates, start=1):
-            print(f"\n  Rank {idx}. Candidate ID: {sc.candidate_id} | COMPOSITE SCORE: {sc.final_score:.4f}")
+            print(
+                f"\n  Rank {idx}. Candidate ID: {sc.candidate_id} | "
+                f"COMPOSITE SCORE: {sc.final_score:.4f}"
+            )
             print("    Score Breakdown:")
             for feature_name, weighted_val in sc.score_breakdown.items():
                 raw_val = getattr(sc.features, feature_name)
