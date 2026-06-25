@@ -1,4 +1,4 @@
-
+from typing import Any
 import networkx as nx
 
 from feature_engineering.behavioral import BehavioralProfile
@@ -7,6 +7,7 @@ from knowledge_graph.ontology import SkillOntologyBuilder
 from knowledge_graph.trajectory import CareerTrajectoryAnalyzer
 from parsers.models import ParsedJob, ParsedResume
 from ranking_engine.models import FeatureVector
+from ranking_engine.rubric import JDRubricScorer
 
 
 class FeatureBuilder:
@@ -30,6 +31,7 @@ class FeatureBuilder:
         behavioral_profile: BehavioralProfile | None,
         retrieval_scores: dict[str, float],
         experience_years: float | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> FeatureVector:
         """Construct the FeatureVector with values normalized to [0.0, 1.0]."""
         # Normalize candidate skills using the ontology
@@ -111,6 +113,24 @@ class FeatureBuilder:
                 else:
                     seniority_match = float(max(0.0, 1.0 - (expected_yoe - experience_years) / expected_yoe))
 
+        # 8. Rubric evaluations and Honeypots
+        jd_positive_signal_count = 0
+        jd_disqualifier_flags = []
+        honeypot_score = 0.0
+
+        if metadata is not None:
+            scorer = JDRubricScorer()
+            gh_url = metadata.get("github_url")
+            jd_positive_signal_count, jd_disqualifier_flags = scorer.evaluate_candidate(
+                resume=parsed_resume,
+                metadata=metadata,
+                experience_years=experience_years,
+                github_url=gh_url,
+            )
+
+        if behavioral_profile is not None:
+            honeypot_score = getattr(behavioral_profile, "honeypot_score", 0.0)
+
         return FeatureVector(
             skill_overlap=skill_overlap,
             kg_skill_distance=kg_distance_score,
@@ -119,4 +139,7 @@ class FeatureBuilder:
             trajectory_alignment=trajectory_alignment,
             behavioral_score=behavioral_score,
             seniority_match=seniority_match,
+            jd_positive_signal_count=jd_positive_signal_count,
+            jd_disqualifier_flags=jd_disqualifier_flags,
+            honeypot_score=honeypot_score,
         )

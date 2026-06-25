@@ -81,9 +81,12 @@ class KnowledgeGraphBuilder:
             return 0
         if source not in graph or target not in graph:
             return None
+        if not hasattr(graph, "_undirected"):
+            graph._undirected = graph.to_undirected()
         try:
-            return nx.shortest_path_length(graph.to_undirected(), source, target)
-        except nx.NetworkXNoPath:
+            lengths = nx.single_source_shortest_path_length(graph._undirected, source, cutoff=3)
+            return lengths.get(target)
+        except nx.NodeNotFound:
             return None
 
     def save_graph(self, graph: nx.DiGraph, path: str | Path) -> Path:

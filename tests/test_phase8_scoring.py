@@ -1,6 +1,7 @@
 import networkx as nx
 import pytest
 
+from feature_engineering.behavioral import BehavioralProfile
 from parsers.models import ParsedJob, ParsedResume
 from ranking_engine.features import FeatureBuilder
 from ranking_engine.models import FeatureVector
@@ -126,3 +127,122 @@ def test_feature_builder_jaccard_and_seniority() -> None:
         experience_years=2.5,
     )
     assert f_vector_low.seniority_match == pytest.approx(0.5)  # 1.0 - (5.0 - 2.5)/5.0 = 0.5
+
+
+def test_rubric_features_are_computed() -> None:
+    builder = FeatureBuilder()
+    kg = nx.DiGraph()
+    resume = ParsedResume(
+        candidate_id="c1",
+        raw_skills=["Python", "RAG", "Qdrant"],
+        experience_entries=[],
+        sections={},
+    )
+    job = ParsedJob(
+        job_id="j1",
+        title="Senior AI Engineer",
+        seniority="senior",
+        must_have=["Python"],
+        raw_text="Required: Python, embeddings, Qdrant.",
+    )
+    # Passed metadata satisfies:
+    # - location inside India (mumbai) -> +1 positive signal
+    # - notice_period_days < 30 (15) -> +1 positive signal
+    # Total positive signal count should be > 0.
+    # No disqualifiers.
+    f_vector = builder.build_feature_vector(
+        parsed_resume=resume,
+        job=job,
+        kg=kg,
+        behavioral_profile=None,
+        retrieval_scores={},
+        experience_years=6.0,
+        metadata={
+            "location": "Mumbai",
+            "willing_to_relocate": True,
+            "notice_period_days": 15,
+            "github_activity_score": 10,
+            "total_career_months": 72,
+            "num_employers": 2,
+        },
+    )
+    assert f_vector.jd_positive_signal_count >= 2
+    assert len(f_vector.jd_disqualifier_flags) == 0
+
+
+def test_honeypot_score_is_populated() -> None:
+    builder = FeatureBuilder()
+    kg = nx.DiGraph()
+    resume = ParsedResume(candidate_id="c1", raw_skills=[], sections={})
+    job = ParsedJob(job_id="j1", title="AI Engineer", must_have=[], raw_text="We are hiring.")
+    
+    behav = BehavioralProfile(candidate_id="c1", honeypot_score=1.0)
+    
+    f_vector = builder.build_feature_vector(
+        parsed_resume=resume,
+        job=job,
+        kg=kg,
+        behavioral_profile=behav,
+        retrieval_scores={},
+        experience_years=3.0,
+        metadata=None,
+    )
+    assert f_vector.honeypot_score == 1.0
+
+
+def test_disqualifier_penalties_are_applied() -> None:
+    engine = ScoringEngine()
+
+    # Case 1: 2 disqualifiers, positive signal count is low (< 5)
+    # Penalty: 0.5 ** 2 = 0.25
+    features_low_pos = FeatureVector(
+        skill_overlap=1.0,
+        kg_skill_distance=1.0,
+        dense_similarity=1.0,
+        bm25_score=1.0,
+        trajectory_alignment=1.0,
+        behavioral_score=1.0,
+        seniority_match=1.0,
+        jd_positive_signal_count=2,
+        jd_disqualifier_flags=["disqualifier_job_hopper", "disqualifier_consulting_only"],
+        honeypot_score=0.0,
+    )
+    res_low = engine.score_candidate("c1", features_low_pos)
+    assert res_low.final_score == pytest.approx(1.0 * 0.25)
+
+    # Case 2: 2 disqualifiers, positive signal count is high (>= 5)
+    # Penalty: 1.0 - 0.1 * 2 = 0.8
+    features_high_pos = FeatureVector(
+        skill_overlap=1.0,
+        kg_skill_distance=1.0,
+        dense_similarity=1.0,
+        bm25_score=1.0,
+        trajectory_alignment=1.0,
+        behavioral_score=1.0,
+        seniority_match=1.0,
+        jd_positive_signal_count=6,
+        jd_disqualifier_flags=["disqualifier_job_hopper", "disqualifier_consulting_only"],
+        honeypot_score=0.0,
+    )
+    res_high = engine.score_candidate("c1", features_high_pos)
+    assert res_high.final_score == pytest.approx(1.0 * 0.8)
+
+
+def test_honeypot_penalty_is_applied() -> None:
+    engine = ScoringEngine()
+
+    features_honeypot = FeatureVector(
+        skill_overlap=1.0,
+        kg_skill_distance=1.0,
+        dense_similarity=1.0,
+        bm25_score=1.0,
+        trajectory_alignment=1.0,
+        behavioral_score=1.0,
+        seniority_match=1.0,
+        jd_positive_signal_count=0,
+        jd_disqualifier_flags=[],
+        honeypot_score=1.0,
+    )
+    res = engine.score_candidate("c1", features_honeypot)
+    assert res.final_score == pytest.approx(1.0 * 0.01)
+

@@ -77,6 +77,7 @@ class RankingOrchestrator:
         parsed_resumes = []
         parsed_resumes_map = {}
         candidates_meta = {}
+        candidates_meta_dicts = {}
         raw_profiles = []
         for cand in raw_candidates:
             record = CandidateRecord.model_validate(cand)
@@ -84,6 +85,20 @@ class RankingOrchestrator:
             parsed_resumes.append(resume)
             parsed_resumes_map[record.id] = resume
             candidates_meta[record.id] = record.experience_years or 0.0
+
+            # Construct metadata for JDRubricScorer
+            ch = record.career_history or []
+            total_months = sum(item.get("duration_months") or 0 for item in ch)
+            num_employers = len(ch)
+            candidates_meta_dicts[record.id] = {
+                "location": record.location or "",
+                "willing_to_relocate": record.activity_metadata.get("willing_to_relocate"),
+                "notice_period_days": record.activity_metadata.get("notice_period_days"),
+                "github_activity_score": record.activity_metadata.get("github_activity_score", -1),
+                "total_career_months": total_months,
+                "num_employers": num_employers,
+                "github_url": str(record.github_url) if record.github_url else None,
+            }
 
             raw_prof = self.behavioral_extractor.extract_raw_profile(
                 candidate_id=record.id,
@@ -161,6 +176,7 @@ class RankingOrchestrator:
                 behavioral_profile=behav_profiles.get(cid),
                 retrieval_scores={"dense": match.dense_score, "bm25": match.bm25_score},
                 experience_years=candidates_meta.get(cid),
+                metadata=candidates_meta_dicts.get(cid),
             )
             scored = self.scoring_engine.score_candidate(cid, f_vector)
             scored_candidates.append((scored, f_vector))

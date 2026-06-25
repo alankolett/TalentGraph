@@ -9,6 +9,9 @@ class FeatureVector(BaseModel):
     trajectory_alignment: float | None = 0.0
     behavioral_score: float | None = 0.0
     seniority_match: float | None = 0.0
+    jd_positive_signal_count: int = 0
+    jd_disqualifier_flags: list[str] = Field(default_factory=list)
+    honeypot_score: float = 0.0
 
 
 class ScoredCandidate(BaseModel):

@@ -48,6 +48,18 @@ class ScoringEngine:
             else:
                 score_breakdown[k] = 0.0
 
+        # Apply Phase 8 penalties
+        num_flags = len(features.jd_disqualifier_flags)
+        if num_flags > 0:
+            if features.jd_positive_signal_count >= 5:
+                penalty = max(0.0, 1.0 - 0.1 * num_flags)
+            else:
+                penalty = 0.5 ** num_flags
+            final_score *= penalty
+
+        if features.honeypot_score > 0.0:
+            final_score *= 0.01
+
         return ScoredCandidate(
             candidate_id=candidate_id,
             final_score=final_score,

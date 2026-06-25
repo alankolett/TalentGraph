@@ -44,13 +44,21 @@ class ExplanationPromptBuilder:
 
         # Format input details for context
         feat_dict = features.model_dump()
+        scores = {}
+        for k, v in feat_dict.items():
+            if v is not None:
+                if isinstance(v, float | int) and not isinstance(v, bool):
+                    scores[k] = f"{v:.2f}"
+                else:
+                    scores[k] = v
+
         input_details = {
             "candidate_id": candidate_id,
             "job_title": job.title,
             "must_have_skills": job.must_have,
             "nice_to_have_skills": job.nice_to_have,
             "tags": tags,
-            "scores": {k: f"{v:.2f}" for k, v in feat_dict.items() if v is not None},
+            "scores": scores,
         }
 
         return (

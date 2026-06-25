@@ -53,13 +53,49 @@ def main() -> None:
                 res = ParsedResume.model_validate(json.loads(line))
                 resumes[res.candidate_id] = res
 
-    # Metadata (experience years)
+    # Metadata (experience years and other fields)
     candidates_meta = {}
+    candidates_meta_dicts = {}
     meta_path = processed_dir / "candidates.parquet"
     if meta_path.exists():
         df = pd.read_parquet(meta_path)
         for _, row in df.iterrows():
-            candidates_meta[str(row["id"])] = float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+            cid = str(row["id"])
+            candidates_meta[cid] = float(row["experience_years"]) if pd.notna(row["experience_years"]) else 0.0
+
+            # Parse activity_metadata if it is a JSON string
+            act_meta = {}
+            if "activity_metadata" in row and pd.notna(row["activity_metadata"]):
+                val = row["activity_metadata"]
+                if isinstance(val, str):
+                    try:
+                        act_meta = json.loads(val)
+                    except Exception:
+                        pass
+                elif isinstance(val, dict):
+                    act_meta = val
+
+            # Also parse redrob_signals if present
+            if not act_meta and "redrob_signals" in row and pd.notna(row["redrob_signals"]):
+                val = row["redrob_signals"]
+                if isinstance(val, str):
+                    try:
+                        act_meta = json.loads(val)
+                    except Exception:
+                        pass
+                elif isinstance(val, dict):
+                    act_meta = val
+
+            # Construct cand_meta
+            candidates_meta_dicts[cid] = {
+                "location": row.get("location") if pd.notna(row.get("location")) else "",
+                "willing_to_relocate": act_meta.get("willing_to_relocate"),
+                "notice_period_days": act_meta.get("notice_period_days"),
+                "github_activity_score": act_meta.get("github_activity_score", -1),
+                "total_career_months": float(row.get("total_career_months")) if pd.notna(row.get("total_career_months")) else 0.0,
+                "num_employers": int(row.get("num_employers")) if pd.notna(row.get("num_employers")) else 0,
+                "github_url": row.get("github_url") if pd.notna(row.get("github_url")) else None,
+            }
 
     # Behavioral Profiles
     behav_profiles = {}
@@ -147,6 +183,7 @@ def main() -> None:
                 behavioral_profile=behav_profiles.get(cid),
                 retrieval_scores=retrieval_scores,
                 experience_years=candidates_meta.get(cid),
+                metadata=candidates_meta_dicts.get(cid),
             )
 
             # Score candidate
@@ -161,7 +198,10 @@ def main() -> None:
             print("    Score Breakdown:")
             for feature_name, weighted_val in sc.score_breakdown.items():
                 raw_val = getattr(sc.features, feature_name)
-                raw_str = f"{raw_val:.3f}" if raw_val is not None else "None"
+                if isinstance(raw_val, float | int) and not isinstance(raw_val, bool):
+                    raw_str = f"{raw_val:.3f}" if raw_val is not None else "None"
+                else:
+                    raw_str = str(raw_val)
                 print(f"      - {feature_name:<20}: {weighted_val:.4f} (raw value: {raw_str})")
 
 
