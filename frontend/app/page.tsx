@@ -1318,7 +1318,7 @@ function PortalApp() {
 
                               {/* Narrative */}
                               <div className="bg-indigo-50/30 dark:bg-indigo-950/10 border-l-4 border-indigo-600 p-4 rounded-r-xl font-sans">
-                                <span className="text-[9px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block font-mono mb-1">// Reranker Narrative Analysis</span>
+                                <span className="text-[9px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider block font-mono mb-1">{"// Reranker Narrative Analysis"}</span>
                                 <p className="text-[11px] text-slate-750 dark:text-slate-350 italic leading-relaxed font-medium">&ldquo;{sandboxScoreResult.narrative}&rdquo;</p>
                               </div>
 

@@ -192,8 +192,8 @@ const FeatureScrollRail = () => {
     if (!containerRef.current || !trackRef.current) return;
     const track = trackRef.current;
     
-    let ctx = gsap.context(() => {
-      let mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
 
       // Desktop + Motion preferred: Horizontal Pin
       mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
@@ -283,14 +283,14 @@ const CodeRevealBlock = () => {
     { text: "}", tokens: [{ text: "}", class: "text-slate-300" }] }
   ];
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLPreElement>(null);
   
   useEffect(() => {
     if (!containerRef.current) return;
     const lines = containerRef.current.querySelectorAll('.code-line');
     
-    let ctx = gsap.context(() => {
-      let mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
       
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.set(lines, { opacity: 0, x: -10 });
